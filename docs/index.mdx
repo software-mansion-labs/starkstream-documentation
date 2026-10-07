@@ -1,11 +1,11 @@
 ---
-title: Apibara documentation
+title: Starkstream documentation
 titleShort: Overview
-description: "Build Starknet indexers with Apibara, the DNA streaming protocol, and the TypeScript SDK."
+description: "Build Starknet indexers with Starkstream, the DNA streaming protocol, and the TypeScript SDK."
 priority: 1000
 ---
 
-# Apibara documentation
+# Starkstream documentation
 
 Build Starknet indexers that stream historical and live data, filter events and
 transactions, and handle chain reorganizations. DNA provides the streaming
@@ -16,3 +16,13 @@ protocol; the TypeScript SDK provides the indexer runtime and plugins.
 - [Starknet](/docs/networks/starknet): stream URLs, data types, filters, and event decoding.
 - [Storage](/docs/storage/drizzle-pg): store indexed data with Drizzle and PostgreSQL.
 - [DNA protocol and architecture](/docs/dna): understand the server and gRPC protocol.
+
+## SDK names and compatibility
+
+Starkstream builds on Apibara. The TypeScript SDK still uses the published
+`apibara` and `@apibara/*` packages, the `apibara` CLI, `apibara.config.ts`, and
+types such as `ApibaraRuntimeConfig`. Use these names exactly as shown in the
+examples while the SDK migration is in progress.
+
+DNA remains the protocol name. The server preserves its wire protocol and
+operational identifiers; see the [compatibility contract](https://github.com/software-mansion-labs/starkstream-dna/blob/main/docs/compatibility.md).
