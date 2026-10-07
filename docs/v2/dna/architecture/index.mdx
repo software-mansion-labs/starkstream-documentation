@@ -2,12 +2,12 @@
 title: DNA v2 architecture
 description: "Discover how DNA achieves best-in-class performance for indexing onchain data."
 diataxis: explanation
-updatedAt: 2024-09-20
+updatedAt: 2026-10-07
 ---
 
 # DNA v2 architecture
 
-This page describes in detail the architecture of DNA v2.
+This page describes in detail the architecture of DNA v2 for Starknet.
 
 At a high-level, the goals for DNA v2 are:
 
@@ -69,14 +69,14 @@ The DNA service is comprised of several components:
 - ingestion service: listens for new blocks on the network and stores them into
   Object Storage.
 - compaction service: combines multiple blocks together into _segments_.
-  Segments are grouped by data type (like logs, transactions, and receipts).
+  Segments are grouped by data type (like events, transactions, and receipts).
 - pruner service: removes blocks that have been compacted to reduce storage cost.
 - stream service: receives streaming requests from clients (indexers) and serves
   onchain data by filtering objects stored on S3.
 
 ### Ingestion service
 
-The ingestion service fetches blocks from the network and stores them into
+The ingestion service fetches blocks from Starknet and stores them into
 Object Storage. This service is the only chain-specific service in DNA, all
 other components work on generic data-structures.
 
@@ -87,7 +87,7 @@ to make this process as efficient as possible:
 - data is stored as pre-serialized protobuf messages to avoid wasting CPU
   cycles serializing the same data over and over again.
 - filtering is entirely done using indices to reduce reads.
-- joins (for example include logs' transactions) are also achieved with indices.
+- joins (for example include events' transactions) are also achieved with indices.
 
 The ingestion service is responsible for creating this data and indices.
 Data is grouped into _blocks_. Blocks are comprised of _fragments_, that
@@ -145,7 +145,7 @@ block in the chain.
  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-On supported networks, the ingestion service is also responsible for
+On Starknet, the ingestion service is also responsible for
 periodically refreshing the mempool (pending) block data and uploading it into
 Object Storage. This works exactly as for all other blocks.
 
@@ -315,4 +315,3 @@ volume, and one with higher performance `io1` volume). All prices as of April
 Notice how the NVMe instance has 30-50x the IOPS per dollar. This price
 difference means that Apibara users benefit from lower costs and/or higher
 performance.
-

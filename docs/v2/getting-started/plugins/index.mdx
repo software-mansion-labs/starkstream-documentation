@@ -2,7 +2,7 @@
 title: Plugins & Hooks
 description: "Learn how to use plugins to extend the functionality of your indexers."
 diataxis: explanation
-updatedAt: 2025-01-05
+updatedAt: 2026-10-28
 ---
 
 # Plugins & Hooks
@@ -33,16 +33,16 @@ The following hooks are available in all indexers.
 You can register plugins in the indexer's configuration, under the `plugins` key.
 
 ```ts [my-indexer.indexer.ts]
-import { BeaconChainStream } from "@apibara/beaconchain";
+import { StarknetStream } from "@apibara/starknet";
 import { defineIndexer } from "@apibara/indexer";
 
 import { myAwesomePlugin } from "@/lib/my-plugin.ts";
 
-export default defineIndexer(BeaconChainStream)({
-  streamUrl: "https://beaconchain.preview.apibara.org",
+export default defineIndexer(StarknetStream)({
+  streamUrl: "https://mainnet.starkstream.io",
   filter: { /* ... */ },
   plugins: [myAwesomePlugin()],
-  async transform({ block: { header, validators } }) {
+  async transform({ block: { header, events } }) {
     /* ... */
   },
 });
@@ -113,13 +113,13 @@ For all cases where you want to use a hook without creating a plugin, you can us
 IMPORTANT: inline hooks are the recommended way to add hooks to an indexer. If the same hook is needed in multiple indexers, it is better to create a plugin. Usually, plugins lives in the `lib` folder, for example `lib/my-plugin.ts`.
 
 ```ts [my-indexer.indexer.ts]
-import { BeaconChainStream } from "@apibara/beaconchain";
+import { StarknetStream } from "@apibara/starknet";
 import { defineIndexer } from "@apibara/indexer";
 
-export default defineIndexer(BeaconChainStream)({
-  streamUrl: "https://beaconchain.preview.apibara.org",
+export default defineIndexer(StarknetStream)({
+  streamUrl: "https://mainnet.starkstream.io",
   filter: { /* ... */ },
-  async transform({ block: { header, validators } }) {
+  async transform({ block: { header, events } }) {
     /* ... */
   },
   hooks: {
