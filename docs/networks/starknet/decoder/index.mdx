@@ -2,7 +2,7 @@
 title: Starknet event decoder
 description: "Starknet: Event decoder reference guide."
 diataxis: reference
-updatedAt: 2025-09-03
+updatedAt: 2026-10-07
 ---
 
 # Starknet event decoder
@@ -11,7 +11,7 @@ The Starknet SDK provides a `decodeEvent` function to help you decode Starknet e
 
 ## Installation
 
-Make sure you have the most recent Apibara Starknet package installed:
+Make sure you have the most recent Starkstream Starknet package installed:
 
 ```bash
 pnpm add @apibara/starknet@next
@@ -103,7 +103,7 @@ pub struct BookRemoved {
 }
 ```
 
-The Apibara SDK automatically infers the following event type (without code generation).
+The Starkstream SDK automatically infers the following event type (without code generation).
 
 ```typescript
 type BookAdded = { id: number, title: FieldElement, author: FieldElement };
