@@ -2,18 +2,14 @@
 
 This repository contains the documentation for the Apibara platform.
 
-The [official documentation](https://www.apibara.com/docs) is periodically
-rebuilt by combining the documentation from the following repositories:
+## Sources
 
- - [`apibara/documentation`](https://github.com/apibara/documentation): this
-   repository. Documentation about the Apibara platform and hosted service.
- - [`apibara/dna`](https://github.com/apibara/dna): documentation about
-   integrations, the Direct Node Access (DNA) protocol, and self-hosting.
- - [`apibara/typescript-sdk`](https://github.com/apibara/typescript-sdk):
-   documentation for the Typescript SDK.
- - [`apibara/python-sdk`](https://github.com/apibara/python-sdk): documentation
-   for the Python SDK.
-
+- [`software-mansion-labs/starkstream-dna`](https://github.com/software-mansion-labs/starkstream-dna):
+  the server README, architecture, crate rustdoc, and protobuf definitions are
+  the technical reference for the Starknet server and DNA protocol.
+- [`software-mansion-labs/apibara-typescript-sdk`](https://github.com/software-mansion-labs/apibara-typescript-sdk):
+  the TypeScript client, CLI, plugins, and Starknet examples are the reference
+  for client-side APIs.
 
 ## Contributing
 
@@ -36,4 +32,3 @@ feel free to contribute to it!
  - Make your changes
  - Open a PR
  - Done!
-

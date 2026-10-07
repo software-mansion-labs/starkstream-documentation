@@ -2,7 +2,7 @@
 title: Drizzle with PostgreSQL
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2025-05-01
+updatedAt: 2026-10-07
 ---
 
 # Drizzle with PostgreSQL
@@ -57,6 +57,8 @@ Add the `drizzleStorage` plugin to your indexer's `plugins`. Notice the followin
 - By default, the connection string is read from the `POSTGRES_CONNECTION_STRING` environment variable. If left empty, a local PGLite database will be created. This is great because it means you don't need to start Postgres on your machine to develop locally!
 
 ```ts [my-indexer.indexer.ts]
+import { StarknetStream } from "@apibara/starknet";
+import { defineIndexer } from "apibara/indexer";
 import {
   drizzle,
   drizzleStorage,
@@ -71,7 +73,7 @@ const db = drizzle({
   },
 });
 
-export default defineIndexer(EvmStream)({
+export default defineIndexer(StarknetStream)({
   // ...
   plugins: [drizzleStorage({ db })],
   // ...
@@ -108,7 +110,9 @@ The plugin allows you to specify the id column name for each table in the schema
 This example uses the same id column name (`_id`) for all tables.
 
 ```ts [my-indexer.indexer.ts]
-export default defineIndexer(EvmStream)({
+import { StarknetStream } from "@apibara/starknet";
+
+export default defineIndexer(StarknetStream)({
   // ...
   plugins: [
     drizzleStorage({
@@ -123,7 +127,9 @@ export default defineIndexer(EvmStream)({
 This example uses different id column names for each table. The `transfers` table will use `transfer_id` as the id column, while all other tables will use `_id`.
 
 ```ts [my-indexer.indexer.ts]
-export default defineIndexer(EvmStream)({
+import { StarknetStream } from "@apibara/starknet";
+
+export default defineIndexer(StarknetStream)({
   // ...
   plugins: [
     drizzleStorage({
@@ -146,7 +152,9 @@ it is. Thanks to the way the plugin works and handles chain reorganizations, it
 can expose the full Drizzle ORM API without any limitations.
 
 ```ts [my-indexer.indexer.ts]
-export default defineIndexer(EvmStream)({
+import { StarknetStream } from "@apibara/starknet";
+
+export default defineIndexer(StarknetStream)({
   // ...
   async transform({ endCursor, block, context, finality }) {
     const { db } = useDrizzleStorage();
@@ -169,9 +177,11 @@ is used to automatically deduce the database schema.
 **Note**: the database instance is _not_ used to query data but only for type inference.
 
 ```ts [my-indexer.indexer.ts]
+import { StarknetStream } from "@apibara/starknet";
+
 const database = drizzle({ schema, connectionString });
 
-export default defineIndexer(EvmStream)({
+export default defineIndexer(StarknetStream)({
   // ...
   async transform({ endCursor, block, context, finality }) {
     const { db } = useDrizzleStorage(database);
@@ -195,11 +205,13 @@ There are two strategies you can adopt for database migrations:
 If you decide to adopt the latter strategy, use the `migrate` option. Notice that the `migrationsFolder` path is relative from the project's root.
 
 ```ts [my-indexer.indexer.ts]
+import { StarknetStream } from "@apibara/starknet";
+
 import { drizzle } from "@apibara/plugin-drizzle";
 
-const database = drizzle({ schema });
+const db = drizzle({ schema });
 
-export default defineIndexer(EvmStream)({
+export default defineIndexer(StarknetStream)({
   // ...
   plugins: [
     drizzleStorage({

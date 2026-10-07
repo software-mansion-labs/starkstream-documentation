@@ -1,9 +1,19 @@
 ---
 title: Apibara documentation
 titleShort: Overview
-description: "Welcome to the Apibara documentation. Find more information about the Apibara protocol."
+description: "Build Starknet indexers with Apibara, the DNA streaming protocol, and the TypeScript SDK."
 priority: 1000
-fullpage: true
 ---
 
-<DocumentationIndex />
+# Apibara documentation
+
+Build Starknet indexers that stream historical and live data, filter events and
+transactions, and handle chain reorganizations. DNA provides the streaming
+protocol; the TypeScript SDK provides the indexer runtime and plugins.
+
+- [Installation](/docs/getting-started/installation): create and run a Starknet indexer.
+- [Indexers](/docs/getting-started/indexers): configure transforms, filters, and factory contracts.
+- [Starknet](/docs/networks/starknet): stream URLs, data types, filters, and event decoding.
+- [Storage](/docs/storage/drizzle-pg): store indexed data with Drizzle and PostgreSQL.
+- [DNA protocol and architecture](/docs/dna): understand the server and gRPC protocol.
+- [Upgrade from v1](/docs/getting-started/upgrading): migrate an existing Starknet indexer.

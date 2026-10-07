@@ -2,7 +2,7 @@
 title: DNA wire protocol
 description: "DNA is a protocol built on top of gRPC to stream onchain data."
 diataxis: explanation
-updatedAt: 2024-10-10
+updatedAt: 2026-10-07
 ---
 
 # DNA wire protocol
@@ -27,8 +27,7 @@ DNA uses a _cursor_ to uniquely identify blocks on the chain. A cursor contains
 two fields:
 
  - `order_key`: the block's height.
- - `unique_key`: the block's unique identifier. Depending on the chain, it's
-   the block hash or state root.
+ - `unique_key`: the Starknet block hash.
 
 
 ## `Status` method
@@ -62,7 +61,7 @@ are optional.
    Possible values are _finalized_ (only receive finalized data), _accepted_
    (receive finalized and non-finalized blocks), and _pending_ (receive
    finalized, non-finalized, and pending blocks).
- - `filter`: a non-empty list of chain-specific data filters.
+ - `filter`: a non-empty list of encoded [Starknet data filters](/docs/networks/starknet/filter).
  - `heartbeat_interval`: the stream will send an heartbeat message if there are
    no messages for the specified amount of time. This is useful to detect if
    the stream hangs. Value must be between 10 and 60 seconds.

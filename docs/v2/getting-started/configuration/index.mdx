@@ -2,7 +2,7 @@
 title: Configuration - apibara.config.ts
 description: "Learn how to configure your indexers using the apibara.config.ts file."
 diataxis: reference
-updatedAt: 2025-03-11
+updatedAt: 2026-10-28
 ---
 
 # apibara.config.ts
@@ -17,6 +17,8 @@ The `runtimeConfig` contains the runtime configuration passed to indexers [if th
 Use this to configure chain or environment specific options such as starting block and contract address.
 
 ```ts [apibara.config.ts]
+import { defineConfig } from "apibara/config";
+
 export default defineConfig({
   runtimeConfig: {
     connectionString: process.env["POSTGRES_CONNECTION_STRING"] ?? "memory://",
@@ -24,22 +26,31 @@ export default defineConfig({
 });
 ```
 
-**`presets: Record<string, R>`**
+**`presets`**
 
-Presets represent different configurations of `runtimeConfig`. You can use presets to switch between different environments, like development, test, and production.
+Presets override values under `runtimeConfig`. You can use presets to switch
+between development, test, and production. Each preset contains a
+`runtimeConfig` object; omitted values are inherited from the root configuration.
 
 ```ts [apibara.config.ts]
+import { defineConfig } from "apibara/config";
+
 export default defineConfig({
   runtimeConfig: {
     connectionString: process.env["POSTGRES_CONNECTION_STRING"] ?? "memory://",
   },
   presets: {
     dev: {
-      connectionString: "memory://",
+      runtimeConfig: {
+        connectionString: "memory://",
+      },
     },
   },
 });
 ```
+
+Select a preset with `pnpm run dev --preset=dev` or
+`pnpm run start --indexer=my-indexer --preset=dev`.
 
 **`preset: string`**
 

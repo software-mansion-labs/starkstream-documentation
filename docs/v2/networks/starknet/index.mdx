@@ -2,7 +2,7 @@
 title: Starknet
 description: "Stream Starknet data with Apibara."
 diataxis: reference
-updatedAt: 2026-07-13
+updatedAt: 2026-10-28
 ---
 
 # Starknet
@@ -45,6 +45,22 @@ https://mainnet.starkstream.io/
 ```txt
 https://testnet.starkstream.io/
 ```
+
+## Authentication
+
+The hosted Mainnet and Sepolia streams require an API token. To request one,
+[contact the Starkstream team on Telegram](https://t.me/starkstream).
+Existing API keys continue to work.
+
+Export the token before starting your indexer:
+
+```bash
+export DNA_TOKEN="YOUR_API_TOKEN"
+```
+
+The TypeScript client reads this environment variable and sends the token in the
+`Authorization: Bearer <token>` header. Self-hosted servers may use a different
+authentication policy; follow the server operator's instructions.
 
 ## Starknet appchains
 
