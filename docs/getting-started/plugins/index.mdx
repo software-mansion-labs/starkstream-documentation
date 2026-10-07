@@ -74,7 +74,7 @@ export function myAwesomePlugin<TFilter, TBlock, TTxnParams>() {
 
 ## Middleware
 
-Apibara indexers support wrapping the `transform` function in middleware. This is used, for example, to wrap all database operations in a transaction.
+Starkstream indexers support wrapping the `transform` function in middleware. This is used, for example, to wrap all database operations in a transaction.
 
 The middleware is registered using the `handler:middleware` hook. This hook takes a `use` argument to register the middleware with the indexer.
 The argument to `use` is a function that takes the indexer's context and a `next` function to call the next middleware or the transform function.
