@@ -1,16 +1,20 @@
 ---
 title: Installation
-description: "Learn how to install and get started with Apibara."
+description: "Learn how to install and get started with Starkstream."
 diataxis: tutorial
 updatedAt: 2026-10-28
 ---
 
 # Installation
 
-This tutorial shows how to setup an Apibara project from scratch. The goal is to
+This tutorial shows how to set up a Starkstream project from scratch. The goal is to
 start indexing data as quickly as possible and to understand the basic structure
 of a project. By the end of this tutorial, you will have a basic indexer that
 streams events from the STRK staking contract on Starknet.
+
+The TypeScript SDK is still published as `apibara` and `@apibara/*`. Its CLI,
+configuration file, and generated types keep those names during the Starkstream
+migration, so use the commands and imports below as written.
 
 ## Installation
 
@@ -46,7 +50,7 @@ After that, you can install the dependencies.
 pnpm install
 ```
 
-## Apibara Config
+## Project configuration
 
 Your indexers' configuration goes in the `apibara.config.ts` file. You can
 leave the configuration as is for now.
@@ -268,7 +272,7 @@ strk-staking | log Event 233 tx=0x012f8356ef02c36ed1ffddd5252c4f03707166cabcccb4
 
 ## Runtime configuration & presets
 
-Apibara provides a mechanism for indexers to load their configuration from the `apibara.config.ts` file:
+Starkstream provides a mechanism for indexers to load their configuration from the `apibara.config.ts` file:
 
 - Add the configuration under the `runtimeConfig` key in `apibara.config.ts`.
 - Change your indexer's module to return a function that, given the runtime configuration, returns the indexer.
