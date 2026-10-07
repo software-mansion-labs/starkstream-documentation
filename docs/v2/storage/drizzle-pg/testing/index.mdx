@@ -2,7 +2,7 @@
 title: Testing
 description: "Learn how to test your indexer's when using the Drizzle plugin."
 diataxis: how-to
-updatedAt: 2025-09-12
+updatedAt: 2026-10-07
 ---
 
 # Testing
@@ -77,10 +77,10 @@ describe("my indexer", () => {
       /* runtime configuration */
     });
 
-    const testResult = await vcr.run("ethereum-usdc-transfers", indexer, {
+    const testResult = await vcr.run("starknet-usdc-transfers", indexer, {
       range: {
-        fromBlock: 10_000_000n,
-        toBlock: 10_000_005n,
+        fromBlock: 800_000n,
+        toBlock: 800_005n,
       },
       hooks: {
         "run:before": async () => {

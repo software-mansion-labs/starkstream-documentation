@@ -65,16 +65,6 @@
           "name": "Starknet",
           "type": "group",
           "path": "/starknet"
-        },
-        {
-          "name": "Beacon Chain",
-          "type": "group",
-          "path": "/beaconchain"
-        },
-        {
-          "name": "EVM",
-          "type": "group",
-          "path": "/evm"
         }
       ]
     },
@@ -96,11 +86,6 @@
           "name": "Protocol",
           "type": "page",
           "path": "/protocol"
-        },
-        {
-          "name": "Add new chain",
-          "type": "page",
-          "path": "/add-new-chain"
         }
       ]
     }

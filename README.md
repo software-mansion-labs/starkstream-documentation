@@ -1,19 +1,25 @@
 # Apibara Documentation
 
-This repository contains the documentation for the Apibara platform.
+This repository contains documentation for indexing Starknet data with DNA v2
+and the TypeScript SDK. Shared features such as storage, plugins, testing, and
+observability are included where they support Starknet indexers.
 
-The [official documentation](https://www.apibara.com/docs) is periodically
-rebuilt by combining the documentation from the following repositories:
+## Sources and scope
 
- - [`apibara/documentation`](https://github.com/apibara/documentation): this
-   repository. Documentation about the Apibara platform and hosted service.
- - [`apibara/dna`](https://github.com/apibara/dna): documentation about
-   integrations, the Direct Node Access (DNA) protocol, and self-hosting.
- - [`apibara/typescript-sdk`](https://github.com/apibara/typescript-sdk):
-   documentation for the Typescript SDK.
- - [`apibara/python-sdk`](https://github.com/apibara/python-sdk): documentation
-   for the Python SDK.
+- [`software-mansion-labs/starkstream-dna`](https://github.com/software-mansion-labs/starkstream-dna):
+  the server README, architecture, crate rustdoc, and protobuf definitions are
+  the technical reference for the Starknet server and DNA protocol.
+- [`software-mansion-labs/apibara-typescript-sdk`](https://github.com/software-mansion-labs/apibara-typescript-sdk):
+  the TypeScript client, CLI, plugins, and Starknet examples are the reference
+  for client-side APIs.
 
+The current server distribution supports Starknet. Documentation for other
+chains, adding a new chain, and discontinued client SDKs is outside this scope.
+The `devlog` directory retains the historical changes relevant to Starknet and
+the shared TypeScript tooling; its dates describe the original releases.
+The `docs/v1` directory is a legacy reference for existing Starknet indexers.
+Its CLI, sinks, service URLs, and screenshots describe the original v1 software;
+they are not current deployment instructions. New development should use `docs/v2`.
 
 ## Contributing
 
@@ -36,4 +42,3 @@ feel free to contribute to it!
  - Make your changes
  - Open a PR
  - Done!
-

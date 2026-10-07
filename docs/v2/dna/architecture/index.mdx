@@ -2,12 +2,14 @@
 title: DNA v2 architecture
 description: "Discover how DNA achieves best-in-class performance for indexing onchain data."
 diataxis: explanation
-updatedAt: 2024-09-20
+updatedAt: 2026-10-07
 ---
 
 # DNA v2 architecture
 
-This page describes in detail the architecture of DNA v2.
+This page describes the architecture of DNA v2 for Starknet. The server reads
+Starknet data through JSON-RPC and WebSocket providers and serves filtered
+streams over gRPC.
 
 At a high-level, the goals for DNA v2 are:
 
@@ -69,16 +71,17 @@ The DNA service is comprised of several components:
 - ingestion service: listens for new blocks on the network and stores them into
   Object Storage.
 - compaction service: combines multiple blocks together into _segments_.
-  Segments are grouped by data type (like logs, transactions, and receipts).
+  Segments are grouped by data type (like events, transactions, and receipts).
 - pruner service: removes blocks that have been compacted to reduce storage cost.
 - stream service: receives streaming requests from clients (indexers) and serves
   onchain data by filtering objects stored on S3.
 
 ### Ingestion service
 
-The ingestion service fetches blocks from the network and stores them into
-Object Storage. This service is the only chain-specific service in DNA, all
-other components work on generic data-structures.
+The ingestion service fetches blocks from Starknet and stores them in Object
+Storage. The Starknet implementation translates provider responses into indexed
+fragments. Shared infrastructure handles ingestion, storage, compaction, and
+streaming.
 
 Serving onchain data requires serving a high-volume of data filtered by a
 relatively small number of columns. When designing DNA, we took a few decisions
@@ -87,7 +90,7 @@ to make this process as efficient as possible:
 - data is stored as pre-serialized protobuf messages to avoid wasting CPU
   cycles serializing the same data over and over again.
 - filtering is entirely done using indices to reduce reads.
-- joins (for example include logs' transactions) are also achieved with indices.
+- joins (for example include events' transactions) are also achieved with indices.
 
 The ingestion service is responsible for creating this data and indices.
 Data is grouped into _blocks_. Blocks are comprised of _fragments_, that
@@ -145,7 +148,7 @@ block in the chain.
  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-On supported networks, the ingestion service is also responsible for
+On Starknet, the ingestion service is also responsible for
 periodically refreshing the mempool (pending) block data and uploading it into
 Object Storage. This works exactly as for all other blocks.
 
@@ -153,7 +156,8 @@ The ingestion service tracks the canonical chain and uploads it to Object Storag
 This data is used by the stream service to track online and offline chain
 reorganizations.
 
-The ingestion service stores its data on etcd. Stream services subscribe to
+The ingestion service stores coordination state and mutable pointers in etcd;
+bulk block data remains in Object Storage. Stream services subscribe to
 etcd updates to receive notifications about new blocks ingested and other
 changes to the chain (for example changes to the finalized block).
 
@@ -315,4 +319,3 @@ volume, and one with higher performance `io1` volume). All prices as of April
 Notice how the NVMe instance has 30-50x the IOPS per dollar. This price
 difference means that Apibara users benefit from lower costs and/or higher
 performance.
-
