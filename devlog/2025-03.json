@@ -2,13 +2,6 @@
   "$schema": "./schema.json",
   "entries": [
     {
-      "type": "feature",
-      "title": "Add support for requests hash EVM data",
-      "author": "fracek",
-      "publishedAt": "2025-03-31T16:00:00Z",
-      "summary": "The `requests_hash` field (EIP-7685) is present on Ethereum Sepolia streams."
-    },
-    {
       "type": "change",
       "title": "PGLite and pg packages are now a peer dependency",
       "author": "jaipaljadeja",
@@ -38,10 +31,10 @@
     },
     {
       "type": "feature",
-      "title": "Add traces to EVM and Starknet streams",
+      "title": "Add traces to Starknet streams",
       "author": "fracek",
       "publishedAt": "2025-03-22T16:00:00Z",
-      "summary": "The EVM and Starknet streams now include traces. Request them by setting the `includeTransactionTrace` filter option."
+      "summary": "The Starknet streams now include traces. Request them by setting the `includeTransactionTrace` filter option."
     },
     {
       "type": "bugfix",
@@ -90,7 +83,7 @@
       "title": "Export network-specific types",
       "author": "fracek",
       "publishedAt": "2025-03-20T18:00:00Z",
-      "summary": "We fixed the `@apibara/starknet` and `@apibara/evm` packages to export some missing network-specific types."
+      "summary": "We fixed the `@apibara/starknet` package to export some missing network-specific types."
     },
     {
       "type": "feature",

@@ -1,0 +1,88 @@
+{
+  "sections": [
+    {
+      "name": "Getting Started",
+      "path": "/",
+      "items": [
+        {
+          "name": "Overview",
+          "type": "page",
+          "path": "/"
+        },
+        {
+          "name": "Installation",
+          "type": "page",
+          "path": "/getting-started/installation"
+        },
+        {
+          "name": "Indexers",
+          "type": "page",
+          "path": "/getting-started/indexers"
+        },
+        {
+          "name": "Plugins & Hooks",
+          "type": "page",
+          "path": "/getting-started/plugins"
+        },
+        {
+          "name": "apibara.config.ts",
+          "type": "page",
+          "path": "/getting-started/configuration"
+        },
+        {
+          "name": "instrumentation.ts",
+          "type": "page",
+          "path": "/getting-started/instrumentation"
+        },
+        {
+          "name": "Top tips",
+          "type": "page",
+          "path": "/getting-started/top-tips"
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "path": "/storage",
+      "items": [
+        {
+          "name": "Drizzle",
+          "type": "group",
+          "path": "/drizzle-pg"
+        }
+      ]
+    },
+    {
+      "name": "Networks",
+      "path": "/networks",
+      "items": [
+        {
+          "name": "Starknet",
+          "type": "group",
+          "path": "/starknet"
+        }
+      ]
+    },
+    {
+      "name": "DNA Protocol",
+      "path": "/dna",
+      "items": [
+        {
+          "name": "Overview",
+          "type": "page",
+          "path": "/"
+        },
+        {
+          "name": "Architecture",
+          "type": "page",
+          "path": "/architecture"
+        },
+        {
+          "name": "Protocol",
+          "type": "page",
+          "path": "/protocol"
+        }
+      ]
+    }
+  ]
+}
