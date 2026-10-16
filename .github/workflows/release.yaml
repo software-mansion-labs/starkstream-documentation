@@ -16,5 +16,11 @@ jobs:
         with:
           rclone_config: ${{ secrets.RCLONE_CONFIG }}
 
-      - run: "rclone sync docs s3:docs/ --stats-one-line -v"
+      - name: Publish documentation
+        run: |
+          # Preserve the published v2 paths while keeping the source tree flat.
+          docs_publish_dir="$(mktemp -d)"
+          mkdir "$docs_publish_dir/v2"
+          cp -R docs/. "$docs_publish_dir/v2/"
+          rclone sync "$docs_publish_dir" s3:docs/ --stats-one-line -v
       - run: "rclone sync devlog s3:devlog/ --stats-one-line -v"
