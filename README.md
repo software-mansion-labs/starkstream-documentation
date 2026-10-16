@@ -17,9 +17,8 @@ The current server distribution supports Starknet. Documentation for other
 chains, adding a new chain, and discontinued client SDKs is outside this scope.
 The `devlog` directory retains the historical changes relevant to Starknet and
 the shared TypeScript tooling; its dates describe the original releases.
-The `docs/v1` directory is a legacy reference for existing Starknet indexers.
-Its CLI, sinks, service URLs, and screenshots describe the original v1 software;
-they are not current deployment instructions. New development should use `docs/v2`.
+
+Current documentation lives in `docs/v2`.
 
 ## Contributing
 
