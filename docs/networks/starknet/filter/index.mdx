@@ -1,374 +1,196 @@
 ---
 title: Starknet filter reference
-description: "Starknet: DNA data filter reference guide."
+description: "Select Starknet events, transactions, traces, and state changes."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-28
 ---
 
 # Starknet filter reference
 
-This page contains reference about the available data filters for Starknet DNA
-streams.
+Pass a `Filter` to your Starknet indexer to select data before it reaches your
+application. Import the SDK type and use `satisfies Filter` to check examples
+against your installed package.
 
-### Related pages
-
-- [Starknet block data reference](/docs/networks/starknet/data)
+See the [SDK filter codecs](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/packages/starknet/src/filter.ts)
+for complete TypeScript definitions, the [server filter schema](https://github.com/software-mansion-labs/starkstream-dna/blob/main/protocol/proto/starknet/v2/filter.proto)
+for wire types, and the [data reference](/docs/networks/starknet/data) for responses.
 
 ## Filter ID
 
-All filters have an associated ID. When the server filters a block, it will
-return a list of all filters that matched a piece of data with the data.
-You can use this ID to build powerful abstractions in your indexers.
+Each item filter accepts an optional numeric `id`. Returned data contains
+`filterIds`, the IDs of the filters that matched it. Assign distinct IDs when
+you need to distinguish matches in your transform.
 
 ## Field elements
 
-Starkstream represents Starknet field elements as hex-encode strings.
-
-```ts
-export type FieldElement = `0x${string}`;
-```
+Addresses and selectors use the SDK's `FieldElement` type: a hex string of the
+form `` `0x${string}` ``. Use [getSelector](/docs/networks/starknet/helpers#getselector)
+to derive an event selector from its name.
 
 ## Filter types
 
 ### Root
 
-The root filter object contains a collection of filters.
-Notice that providing an empty filter object is an error.
+The root filter contains any combination of the following fields:
 
-```ts
-export type Filter = {
-  header?: HeaderFilter;
-  transactions?: TransactionFilter[];
-  events?: EventFilter[];
-  messages?: MessageToL1Filter[];
-  storageDiffs?: StorageDiffFilter[];
-  contractChanges?: ContractChangeFilter[];
-  nonceUpdates?: NonceUpdateFilter[];
-};
-```
+| Field | SDK type | Selects |
+| --- | --- | --- |
+| `header` | `HeaderFilter` | When to return block headers |
+| `events` | `readonly EventFilter[]` | Contract events |
+| `transactions` | `readonly TransactionFilter[]` | Transactions |
+| `messages` | `readonly MessageToL1Filter[]` | Messages from Starknet to L1 |
+| `storageDiffs` | `readonly StorageDiffFilter[]` | Contract storage changes |
+| `contractChanges` | `readonly ContractChangeFilter[]` | Class declarations, replacements, and deployments |
+| `nonceUpdates` | `readonly NonceUpdateFilter[]` | Contract nonce changes |
+
+A standalone empty root filter (`{}`) cannot produce data and is rejected.
+An empty item filter, such as `events: [{}]`, matches all items of that kind
+subject to its default transaction-status filter.
 
 ### Header
 
-The `HeaderFilter` object controls when the block header is returned to the client.
+| Value | Behavior |
+| --- | --- |
+| `always` | Return every block header, even when no body filter matches |
+| `on_data` | Return the header when another filter matches; this is the default |
+| `on_data_or_on_new_block` | Also return headers for new live blocks, even without a body match |
+
+To receive only block headers:
 
 ```ts
-export type HeaderFilter = "always" | "on_data" | "on_data_or_on_new_block";
+import type { Filter } from "@apibara/starknet";
+
+const filter = { header: "always" } satisfies Filter;
 ```
-
-The values have the following meaning:
-
-- `always`: Always return the header, even if no other filter matches.
-- `on_data`: Return the header only if any other filter matches. This is the default value.
-- `on_data_or_on_new_block`: Return the header only if any other filter matches. If no other filter matches, return the header only if the block is a new block.
 
 ### Events
 
-Events are the most common filter used by Starkstream users. You can filter by smart contract or event selector.
+Use `EventFilter` to select events by emitting contract and keys. Conditions
+within one item filter are combined; multiple item filters select the union
+of their matches.
+
+| Option | Behavior |
+| --- | --- |
+| `address` | Match the emitting contract; omit to match any contract |
+| `keys` | Match keys by position, using `null` as a wildcard; the server indexes the first four positions |
+| `strict` | Require exactly as many event keys as the filter specifies; otherwise use a prefix match |
+| `transactionStatus` | `succeeded` (default), `reverted`, or `all` |
+| `includeTransaction` | Include the emitting transaction |
+| `includeReceipt` | Include that transaction's receipt |
+| `includeMessages` | Include messages to L1 from the same transaction |
+| `includeSiblings` | Include other events from the same transaction |
+| `includeTransactionTrace` | Include that transaction's trace in `block.traces` |
+
+Select transfers from the USDC contract used in the [SDK example](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/examples/cli-drizzle/indexers/2-starknet.indexer.ts) and include their receipts:
 
 ```ts
-export type EventFilter = {
-  id?: number;
-  address?: FieldElement;
-  keys?: (FieldElement | null)[];
-  strict?: boolean;
-  transactionStatus?: "succeeded" | "reverted" | "all";
-  includeTransaction?: boolean;
-  includeReceipt?: boolean;
-  includeMessages?: boolean;
-  includeSiblings?: boolean;
-};
+import { getSelector, type Filter } from "@apibara/starknet";
+
+const filter = {
+  events: [{
+    id: 1,
+    address: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
+    keys: [getSelector("Transfer")],
+    includeReceipt: true,
+  }],
+} satisfies Filter;
 ```
 
-**Properties**
+To match transfers from any contract, omit `address`. To match several contracts
+or event names, add more entries to `events`.
 
-- `address`: filter by contract address. If empty, matches any contract
-  address.
-- `keys`: filter by keys. Use `null` to match _any_ value. The server will
-  filter based only the first four elements of the array.
-- `strict`: return events whose keys length matches the filter. By default, the
-  filter does a prefix match on the keys.
-- `transactionStatus`: return events emitted by transactions with the provided
-  status. Defaults to `succeeded`.
-- `includeTransaction`: also return the transaction that emitted the event.
-- `includeReceipt`: also return the receipt of the transaction that emitted the
-  event.
-- `includeMessages`: also return all messages to L1 sent by the transaction that
-  emitted the event.
-- `includeSiblings`: also return all other events emitted by the same transaction
-  that emitted the matched event.
-
-**Examples**
-
-- All events from a specific smart contract.
+For an event with a selector and two indexed addresses, match exactly three keys:
 
 ```ts
+import { getSelector, type Filter } from "@apibara/starknet";
+
 const filter = {
-  events: [{ address: MY_CONTRACT }],
-};
-```
-
-- Multiple events from the same smart contract.
-
-```ts
-const filter = {
-  events: [
-    {
-      address: MY_CONTRACT,
-      keys: [getSelector("Approve")],
-    },
-    {
-      address: MY_CONTRACT,
-      keys: [getSelector("Transfer")],
-    },
-  ],
-};
-```
-
-- Multiple events from different smart contracts.
-
-```ts
-const filter = {
-  events: [
-    {
-      address: CONTRACT_A,
-      keys: [getSelector("Transfer")],
-    },
-    {
-      address: CONTRACT_B,
-      keys: [getSelector("Transfer")],
-      includeReceipt: false,
-    },
-    {
-      address: CONTRACT_C,
-      keys: [getSelector("Transfer")],
-    },
-  ],
-};
-```
-
-- All `Transfer` events, from any contract.
-
-```ts
-const filter = {
-  events: [
-    {
-      keys: [getSelector("Transfer")],
-    },
-  ],
-};
-```
-
-- All "new type" `Transfer` events with indexed sender and destination addresses.
-
-```ts
-const filter = {
-  events: [
-    {
-      keys: [getSelector("Transfer"), null, null],
-      strict: true,
-    },
-  ],
-};
+  events: [{ keys: [getSelector("Transfer"), null, null], strict: true }],
+} satisfies Filter;
 ```
 
 ### Transactions
 
-Transactions on Starknet can be of different type (invoke, declare contract, deploy contract or account, handle L1 message). Clients can request all transactions or filter by transaction type.
+`TransactionFilter` supports:
+
+| Option | Behavior |
+| --- | --- |
+| `transactionStatus` | `succeeded` (default), `reverted`, or `all` |
+| `transactionType` | Match one transaction version using a tagged union |
+| `includeReceipt` | Include its receipt |
+| `includeMessages` | Include its messages to L1 |
+| `includeEvents` | Include its events |
+| `includeTrace` | Include its trace in `block.traces` |
+
+Supported `transactionType._tag` values are `invokeV0`, `invokeV1`, `invokeV3`,
+`declareV0`, `declareV1`, `declareV2`, `declareV3`, `deploy`, `deployAccountV1`,
+`deployAccountV3`, and `l1Handler`. The matching payload property is an empty object.
+
+Select account deployments with receipts:
 
 ```ts
-export type InvokeTransactionV0Filter = {
-  _tag: "invokeV0";
-  invokeV0: {};
-};
+import type { Filter } from "@apibara/starknet";
 
-export type InvokeTransactionV1Filter = {
-  _tag: "invokeV1";
-  invokeV1: {};
-};
-
-export type InvokeTransactionV3Filter = {
-  _tag: "invokeV3";
-  invokeV3: {};
-};
-
-export type DeployTransactionFilter = {
-  _tag: "deploy";
-  deploy: {};
-};
-
-export type DeclareV0TransactionFilter = {
-  _tag: "declareV0";
-  declareV0: {};
-};
-
-export type DeclareV1TransactionFilter = {
-  _tag: "declareV1";
-  declareV1: {};
-};
-
-export type DeclareV2TransactionFilter = {
-  _tag: "declareV2";
-  declareV2: {};
-};
-
-export type DeclareV3TransactionFilter = {
-  _tag: "declareV3";
-  declareV3: {};
-};
-
-export type L1HandlerTransactionFilter = {
-  _tag: "l1Handler";
-  l1Handler: {};
-};
-
-export type DeployAccountV1TransactionFilter = {
-  _tag: "deployAccountV1";
-  deployAccountV1: {};
-};
-
-export type DeployAccountV3TransactionFilter = {
-  _tag: "deployAccountV3";
-  deployAccountV3: {};
-};
-
-export type TransactionFilter = {
-  id?: number;
-  transactionStatus?: "succeeded" | "reverted" | "all";
-  includeReceipt?: boolean;
-  includeMessages?: boolean;
-  includeEvents?: boolean;
-  transactionType?:
-    | InvokeTransactionV0Filter
-    | InvokeTransactionV1Filter
-    | InvokeTransactionV3Filter
-    | DeployTransactionFilter
-    | DeclareV0TransactionFilter
-    | DeclareV1TransactionFilter
-    | DeclareV2TransactionFilter
-    | DeclareV3TransactionFilter
-    | L1HandlerTransactionFilter
-    | DeployAccountV1TransactionFilter
-    | DeployAccountV3TransactionFilter;
-};
-```
-
-**Properties**
-
-- `transactionStatus`: return transactions with the provided status. Defaults to
-  `succeeded`.
-- `includeReceipt`: also return the receipt of the transaction.
-- `includeMessages`: also return the messages to L1 sent by the transaction.
-- `includeEvents`: also return the events emitted by the transaction.
-- `transactionType`: filter by transaction type.
-
-**Examples**
-
-- Request all transactions in a block. Notice the empty transaction filter object, this filter will match _any_ transaction.
-
-```ts
-const filter = { transactions: [{}] };
-```
-
-- Request all transactions of a specific type, e.g. deploy account. In this case we specify the `deployAccountV3` variant.
-
-```ts
 const filter = {
-  transactions: [
-    {
-      transactionType: { _tag: "deployAccountV3", deployAccountV3: {} },
-    },
-  ],
-};
+  transactions: [{
+    transactionType: { _tag: "deployAccountV3", deployAccountV3: {} },
+    includeReceipt: true,
+  }],
+} satisfies Filter;
+```
+
+To select all transactions, including reverted ones:
+
+```ts
+import type { Filter } from "@apibara/starknet";
+
+const filter = { transactions: [{ transactionStatus: "all" }] } satisfies Filter;
 ```
 
 ### Messages
 
-Filter messages from L1 to Starknet.
+`MessageToL1Filter` selects messages sent **from Starknet to L1**.
+For the opposite direction, select `l1Handler` transactions.
 
-```ts
-export type MessageToL1Filter = {
-  id?: number;
-  fromAddress?: FieldElement;
-  toAddress?: FieldElement;
-  transactionStatus?: "succeeded" | "reverted" | "all";
-  includeTransaction?: boolean;
-  includeReceipt?: boolean;
-  includeEvents?: boolean;
-};
-```
+| Option | Behavior |
+| --- | --- |
+| `fromAddress` | Match the sender on Starknet; omit to match any sender |
+| `toAddress` | Match the recipient on L1; omit to match any recipient |
+| `transactionStatus` | `succeeded` (default), `reverted`, or `all` |
+| `includeTransaction` | Include the sending transaction |
+| `includeReceipt` | Include its receipt |
+| `includeEvents` | Include its events |
+| `includeTransactionTrace` | Include its trace in `block.traces` |
 
-**Properties**
-
-- `fromAddress`: filter by sender address. If empty, matches any sender address.
-- `toAddress`: filter by receiver address. If empty, matches any receiver address.
-- `transactionStatus`: return messages with the provided status. Defaults to
-  `succeeded`.
-- `includeTransaction`: also return the transaction that sent the message.
-- `includeReceipt`: also return the receipt of the transaction that sent the
-  message.
-- `includeEvents`: also return the events emitted by the transaction that sent
-  the message.
+Trace include options require traces to have been ingested by the server. See
+[transaction traces](/docs/networks/starknet/data#transaction-trace).
 
 ### Storage diff
 
-Request changes to the storage of one or more contracts.
-
-```ts
-export type StorageDiffFilter = {
-  id?: number;
-  contractAddress?: FieldElement;
-};
-```
-
-**Properties**
-
-- `contractAddress`: filter by contract address. If empty, matches any contract
-  address.
+`StorageDiffFilter` accepts `contractAddress`. Omit it to receive storage
+changes for any contract.
 
 ### Contract change
 
-Request changes to the declared or deployed contracts.
+`ContractChangeFilter.change` is a tagged union with one of these variants:
+
+| Tag | Selects |
+| --- | --- |
+| `declaredClass` | Class declarations |
+| `replacedClass` | Class replacements on existing contracts |
+| `deployedContract` | Contract deployments |
+
+Omit `change` to select all change types. For example, select deployments:
 
 ```ts
-export type DeclaredClassFilter = {
-  _tag: "declaredClass";
-  declaredClass: {};
-};
+import type { Filter } from "@apibara/starknet";
 
-export type ReplacedClassFilter = {
-  _tag: "replacedClass";
-  replacedClass: {};
-};
-
-export type DeployedContractFilter = {
-  _tag: "deployedContract";
-  deployedContract: {};
-};
-
-export type ContractChangeFilter = {
-  id?: number;
-  change?: DeclaredClassFilter | ReplacedClassFilter | DeployedContractFilter;
-};
+const filter = {
+  contractChanges: [{ change: { _tag: "deployedContract", deployedContract: {} } }],
+} satisfies Filter;
 ```
-
-**Properties**
-
-- `change`: filter by change type.
-  - `declaredClass`: receive declared classes.
-  - `replacedClass`: receive replaced classes.
-  - `deployedContract`: receive deployed contracts.
 
 ### Nonce update
 
-Request changes to the nonce of one or more contracts.
-
-```ts
-export type NonceUpdateFilter = {
-  id?: number;
-  contractAddress?: FieldElement;
-};
-```
-
-**Properties**
-
-- `contractAddress`: filter by contract address. If empty, matches any contract.
+`NonceUpdateFilter` accepts `contractAddress`. Omit it to receive nonce updates
+for any contract. Each state-change filter also accepts an optional `id`.

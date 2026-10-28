@@ -95,3 +95,17 @@ Shorthand for `rolldownConfig.resolve.exportConditions`.
 **`watchOptions: WatchOptions`**
 
 Configure Rolldown's file watcher. Defaults to `{ignore: ["**/node_modules/**", "**/.apibara/**"]}`.
+
+## TypeScript configuration
+
+The CLI generates the `ApibaraRuntimeConfig` type from `runtimeConfig` in
+`.apibara/types`. Import it from `apibara/types` when defining an indexer that
+accepts runtime configuration.
+
+After editing `apibara.config.ts`, run `pnpm run prepare` to refresh these types.
+The development and production build commands also generate them automatically.
+Keep the CLI-generated `tsconfig.json`, which already includes `.apibara/types`.
+
+For a Starknet Mainnet/Sepolia preset, override the stream URL, contract address,
+and starting block together under `presets.<name>.runtimeConfig`. Addresses and
+relevant block ranges can differ between networks.

@@ -2,7 +2,7 @@
 title: DNA wire protocol
 description: "DNA is a protocol built on top of gRPC to stream onchain data."
 diataxis: explanation
-updatedAt: 2026-10-07
+updatedAt: 2026-10-28
 ---
 
 # DNA wire protocol
@@ -39,7 +39,7 @@ is an empty message. The response has the following fields:
     recent block available for streaming.
  - `finalized`: the most recent finalized block.
  - `starting`: the first available block. Usually this is the genesis block,
-   but DNA server operators can prune older nodes to save on storage space.
+   but DNA server operators can prune older data to save on storage space.
 
 ## `StreamData` method
 
@@ -62,7 +62,7 @@ are optional.
    (receive finalized and non-finalized blocks), and _pending_ (receive
    finalized, non-finalized, and pending blocks).
  - `filter`: a non-empty list of encoded [Starknet data filters](/docs/networks/starknet/filter).
- - `heartbeat_interval`: the stream will send an heartbeat message if there are
+ - `heartbeat_interval`: the stream will send a heartbeat message if there are
    no messages for the specified amount of time. This is useful to detect if
    the stream hangs. Value must be between 10 and 60 seconds.
 
@@ -75,13 +75,15 @@ Each stream message can be one of the following message types:
  - `invalidate`: the specified blocks don't belong to the canonical chain
    anymore because they were part of a chain reorganization.
  - `finalize`: the most recent finalized block moved forward.
- - `heartbeat`: an heartbeat message.
+ - `heartbeat`: a heartbeat message.
  - `system_message`: used to send messages from the server to the client.
 
 #### `Data` message
 
-Contains the requested data for a single block. All data messages cursors are
-monotonically increasing, unless an `Invalidate` message is received.
+Contains the requested data for a single block. Accepted and finalized block cursors advance
+unless an `Invalidate` message is received. Pending data may contain successive
+versions of the same pre-confirmed block; clients must replace the previous
+pending state rather than append each version.
 
 The message contains the following fields:
 
@@ -98,7 +100,7 @@ Notice how the `data` field is a _list of block data_. This sounds
 counter-intuitive since the `Data` message contains data about a _single
 block_. The reason is that, as we've seen in the _"Request"_ section,
 the client can specify a list of filters. The `data` field has the same
-length as the request's `filters` field.
+length as the request's `filter` field.
 In most cases, the client specifies a single filter and receives a single block
 of data. For advanced use cases (like tracking contracts deployed by a
 factory), the client uses multiple filters to have parallel streams of data
@@ -126,10 +128,10 @@ This message is useful to prune old data.
 
 This message is sent at regular intervals once the stream reaches the chain's head.
 
-Clients can detect if the stream hang by adding a timeout to the stream's _receive_
+Clients can detect if the stream hangs by adding a timeout to the stream's _receive_
 method.
 
-#### `SytemMessage` message
+#### `SystemMessage` message
 
 This message is used by the server to send out-of-band messages to the client.
 It contains text messages such as data usage, warnings about reaching the free
@@ -137,151 +139,11 @@ quota, or information about upcoming system upgrades.
 
 ## protobuf definition
 
-This section contains the protobuf definition used by the DNA server and clients.
-If you're implementing a new SDK for DNA, you can use this as the starting point.
+Use the server's [DNA stream protobuf definition](https://github.com/software-mansion-labs/starkstream-dna/blob/main/protocol/proto/dna/v2/stream.proto)
+when implementing a client. The service name remains `dna.v2.stream.DnaStream`.
 
-```proto
-syntax = "proto3";
-
-package dna.v2.stream;
-
-import "google/protobuf/duration.proto";
-
-service DnaStream {
-  // Stream data from the server.
-  rpc StreamData(StreamDataRequest) returns (stream StreamDataResponse);
-  // Get DNA server status.
-  rpc Status(StatusRequest) returns (StatusResponse);
-}
-
-// A cursor over the stream content.
-message Cursor {
-  // Key used for ordering messages in the stream.
-  //
-  // This is usually the block or slot number.
-  uint64 order_key = 1;
-  // Key used to discriminate branches in the stream.
-  //
-  // This is usually the hash of the block.
-  bytes unique_key = 2;
-}
-
-// Request for the `Status` method.
-message StatusRequest {}
-
-// Response for the `Status` method.
-message StatusResponse {
-  // The current head of the chain.
-  Cursor current_head = 1;
-  // The last cursor that was ingested by the node.
-  Cursor last_ingested = 2;
-  // The finalized block.
-  Cursor finalized = 3;
-  // The first block available.
-  Cursor starting = 4;
-}
-
-// Request data to be streamed.
-message StreamDataRequest {
-  // Cursor to start streaming from.
-  //
-  // If not specified, starts from the genesis block.
-  // Use the data's message `end_cursor` field to resume streaming.
-  optional Cursor starting_cursor = 1;
-  // Return data with the specified finality.
-  //
-  // If not specified, defaults to `DATA_FINALITY_ACCEPTED`.
-  optional DataFinality finality = 2;
-  // Filters used to generate data.
-  repeated bytes filter = 3;
-  // Heartbeat interval.
-  //
-  // Value must be between 10 and 60 seconds.
-  // If not specified, defaults to 30 seconds.
-  optional google.protobuf.Duration heartbeat_interval = 4;
-}
-
-// Contains a piece of streamed data.
-message StreamDataResponse {
-  oneof message {
-    Data data = 1;
-    Invalidate invalidate = 2;
-    Finalize finalize = 3;
-    Heartbeat heartbeat = 4;
-    SystemMessage system_message = 5;
-  }
-}
-
-// Invalidate data after the given cursor.
-message Invalidate {
-  // The cursor of the new chain's head.
-  //
-  // All data after this cursor should be considered invalid.
-  Cursor cursor = 1;
-  // List of blocks that were removed from the chain.
-  repeated Cursor removed = 2;
-}
-
-// Move the finalized block forward.
-message Finalize {
-  // The cursor of the new finalized block.
-  //
-  // All data before this cursor cannot be invalidated.
-  Cursor cursor = 1;
-}
-
-// A single block of data.
-//
-// If the request specified multiple filters, the `data` field will contain the
-// data for each filter in the same order as the filters were specified in the
-// request.
-// If no data is available for a filter, the corresponding data field will be
-// empty.
-message Data {
-  // Cursor that generated this block of data.
-  optional Cursor cursor = 1;
-  // Block cursor. Use this cursor to resume the stream.
-  Cursor end_cursor = 2;
-  // The finality status of the block.
-  DataFinality finality = 3;
-  // The block data.
-  //
-  // This message contains chain-specific data serialized using protobuf.
-  repeated bytes data = 4;
-  // The production mode of the block.
-  DataProduction production = 5;
-}
-
-// Sent to clients to check if stream is still connected.
-message Heartbeat {}
-
-// Message from the server to the client.
-message SystemMessage {
-  oneof output {
-    // Output to stdout.
-    string stdout = 1;
-    // Output to stderr.
-    string stderr = 2;
-  }
-}
-
-// Data finality.
-enum DataFinality {
-  DATA_FINALITY_UNKNOWN = 0;
-  // Data was received, but is not part of the canonical chain yet.
-  DATA_FINALITY_PENDING = 1;
-  // Data is now part of the canonical chain, but could still be invalidated.
-  DATA_FINALITY_ACCEPTED = 2;
-  // Data is finalized and cannot be invalidated.
-  DATA_FINALITY_FINALIZED = 3;
-}
-
-// Data production mode.
-enum DataProduction {
-  DATA_PRODUCTION_UNKNOWN = 0;
-  // Data is for a backfilled block.
-  DATA_PRODUCTION_BACKFILL = 1;
-  // Data is for a live block.
-  DATA_PRODUCTION_LIVE = 2;
-}
-```
+The request's `filter` entries and response's `data` entries contain messages
+encoded with the [Starknet filter schema](https://github.com/software-mansion-labs/starkstream-dna/blob/main/protocol/proto/starknet/v2/filter.proto)
+and [Starknet data schema](https://github.com/software-mansion-labs/starkstream-dna/blob/main/protocol/proto/starknet/v2/data.proto).
+The [TypeScript SDK](https://github.com/software-mansion-labs/apibara-typescript-sdk)
+provides codecs for these messages.
