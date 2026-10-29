@@ -90,12 +90,13 @@ pnpm apibara add
 ✔ Updated package.json
 ✔ Created strk-staking.indexer.ts
 
-ℹ Before running the indexer, run pnpm run install & pnpm run prepare
+ℹ Before running the indexer, run pnpm install & pnpm run prepare
 ```
 
 :::
 
-After that, you can implement the indexer. In this case, the indexer listens for all events
+Run `pnpm install` and `pnpm run prepare` to install the added dependencies and generate types.
+Then implement the indexer. In this case, the indexer listens for all events
 emitted by the STRK staking contract.
 
 Let's start by updating the `apibara.config.ts` file with the starting block.
