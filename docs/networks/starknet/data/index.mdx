@@ -2,12 +2,14 @@
 title: Starknet data reference
 description: "Starknet: DNA data data reference guide."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-29
 ---
 
 # Starknet data reference
 
 This page contains reference about the available data in Starknet DNA streams.
+The definitions below expand union variants to show the decoded value shapes.
+Import SDK types in application code; the SDK also marks its arrays as read-only.
 
 ### Related pages
 
@@ -21,8 +23,8 @@ This field contains the list of _all filter IDs_ that matched a piece of data.
 
 ## Nullable fields
 
-**Important**: most fields are nullable to allow evolving the protocol. You should
-always assert the presence of a field for critical indexers.
+Fields marked with `?` can be absent. The TypeScript SDK requires the other
+fields when decoding data and throws if required data is missing.
 
 ## Field elements
 
@@ -39,12 +41,15 @@ export type FieldElement = `0x${string}`;
 The root object is the `Block`.
 
 ```ts
+import type { ExecutionResources, TransactionTrace } from "@apibara/starknet";
+
 export type Block = {
-  header?: BlockHeader;
+  header: BlockHeader;
   transactions: Transaction[];
   receipts: TransactionReceipt[];
   events: Event[];
   messages: MessageToL1[];
+  traces: TransactionTrace[];
   storageDiffs: StorageDiff[];
   contractChanges: ContractChange[];
   nonceUpdates: NonceUpdate[];
@@ -58,15 +63,16 @@ This is the block header, which contains information about the block.
 ```ts
 export type BlockHeader = {
   blockHash?: FieldElement;
-  parentBlockHash?: FieldElement;
-  blockNumber?: bigint;
-  sequencerAddress?: FieldElement;
+  parentBlockHash: FieldElement;
+  blockNumber: bigint;
+  sequencerAddress: FieldElement;
   newRoot?: FieldElement;
-  timestamp?: Date;
-  starknetVersion?: string;
-  l1GasPrice?: ResourcePrice;
-  l1DataGasPrice?: ResourcePrice;
-  l1DataAvailabilityMode?: "blob" | "calldata";
+  timestamp: Date;
+  starknetVersion: string;
+  l1GasPrice: ResourcePrice;
+  l1DataGasPrice: ResourcePrice;
+  l2GasPrice?: ResourcePrice;
+  l1DataAvailabilityMode: "blob" | "calldata" | "unknown";
 };
 
 export type ResourcePrice = {
@@ -86,6 +92,7 @@ export type ResourcePrice = {
 - `starknetVersion`: the Starknet version.
 - `l1GasPrice`: the L1 gas price.
 - `l1DataGasPrice`: the L1 data gas price.
+- `l2GasPrice`: the L2 gas price, when available.
 - `l1DataAvailabilityMode`: the L1 data availability mode.
 
 - `priceInFri`: the price of L1 gas in the block, in units of fri (10^-18 $STRK).
@@ -98,13 +105,14 @@ An event is emitted by a transaction.
 ```ts
 export type Event = {
   filterIds: number[];
-  address?: FieldElement;
+  address: FieldElement;
   keys: FieldElement[];
   data: FieldElement[];
-  eventIndex?: number;
-  transactionIndex?: number;
-  transactionHash?: FieldElement;
-  transactionStatus?: "succeeded" | "reverted";
+  eventIndex: number;
+  eventIndexInTransaction: number;
+  transactionIndex: number;
+  transactionHash: FieldElement;
+  transactionStatus: "succeeded" | "reverted" | "unknown";
 };
 ```
 
@@ -114,6 +122,7 @@ export type Event = {
 - `keys`: the keys of the event.
 - `data`: the data of the event.
 - `eventIndex`: the index of the event in the block.
+- `eventIndexInTransaction`: the index of the event in its transaction.
 - `transactionIndex`: the index of the transaction that emitted the event.
 - `transactionHash`: the hash of the transaction that emitted the event.
 - `transactionStatus`: the status of the transaction that emitted the event.
@@ -133,15 +142,15 @@ in the `Transaction` type. Common transaction information is accessible in the
 
 ```ts
 export type TransactionMeta = {
-  transactionIndex?: number;
-  transactionHash?: FieldElement;
-  transactionStatus?: "succeeded" | "reverted";
+  transactionIndex: number;
+  transactionHash: FieldElement;
+  transactionStatus: "succeeded" | "reverted" | "unknown";
 };
 
 export type Transaction = {
   filterIds: number[];
-  meta?: TransactionMeta;
-  transaction?:
+  meta: TransactionMeta;
+  transaction:
     | InvokeTransactionV0
     | InvokeTransactionV1
     | InvokeTransactionV3
@@ -175,10 +184,10 @@ export type Transaction = {
 export type InvokeTransactionV0 = {
   _tag: "invokeV0";
   invokeV0: {
-    maxFee?: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    contractAddress?: FieldElement;
-    entryPointSelector?: FieldElement;
+    contractAddress: FieldElement;
+    entryPointSelector: FieldElement;
     calldata: FieldElement[];
   };
 };
@@ -196,11 +205,11 @@ export type InvokeTransactionV0 = {
 export type InvokeTransactionV1 = {
   _tag: "invokeV1";
   invokeV1: {
-    senderAddress?: FieldElement;
+    senderAddress: FieldElement;
     calldata: FieldElement[];
-    maxFee?: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    nonce?: FieldElement;
+    nonce: FieldElement;
   };
 };
 ```
@@ -215,28 +224,28 @@ export type InvokeTransactionV1 = {
 
 ```ts
 export type ResourceBounds = {
-  maxAmount?: bigint;
-  maxPricePerUnit?: bigint;
+  maxAmount: bigint;
+  maxPricePerUnit: bigint;
 };
 
 export type ResourceBoundsMapping = {
-  l1Gas?: ResourceBounds;
-  l2Gas?: ResourceBounds;
+  l1Gas: ResourceBounds;
+  l2Gas: ResourceBounds;
 };
 
 export type InvokeTransactionV3 = {
   _tag: "invokeV3";
   invokeV3: {
-    senderAddress?: FieldElement;
+    senderAddress: FieldElement;
     calldata: FieldElement[];
     signature: FieldElement[];
-    nonce?: FieldElement;
-    resourceBounds?: ResourceBoundsMapping;
-    tip?: bigint;
+    nonce: FieldElement;
+    resourceBounds: ResourceBoundsMapping;
+    tip: bigint;
     paymasterData: FieldElement[];
     accountDeploymentData: FieldElement[];
-    nonceDataAvailabilityMode?: "l1" | "l2";
-    feeDataAvailabilityMode?: "l1" | "l2";
+    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
   };
 };
 ```
@@ -258,10 +267,10 @@ export type InvokeTransactionV3 = {
 export type L1HandlerTransaction = {
   _tag: "l1Handler";
   l1Handler: {
-    contractAddress?: FieldElement;
-    entryPointSelector?: FieldElement;
+    contractAddress: FieldElement;
+    entryPointSelector: FieldElement;
     calldata: FieldElement[];
-    nonce?: bigint;
+    nonce: bigint;
   };
 };
 ```
@@ -277,9 +286,9 @@ export type L1HandlerTransaction = {
 export type DeployTransaction = {
   _tag: "deploy";
   deploy: {
-    contractAddressSalt?: FieldElement;
+    contractAddressSalt: FieldElement;
     constructorCalldata: FieldElement[];
-    classHash?: FieldElement;
+    classHash: FieldElement;
   };
 };
 ```
@@ -294,10 +303,10 @@ export type DeployTransaction = {
 export type DeclareTransactionV0 = {
   _tag: "declareV0";
   declareV0: {
-    senderAddress?: FieldElement;
-    maxFee?: FieldElement;
+    senderAddress: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    classHash?: FieldElement;
+    classHash: FieldElement;
   };
 };
 ```
@@ -313,11 +322,11 @@ export type DeclareTransactionV0 = {
 export type DeclareTransactionV1 = {
   _tag: "declareV1";
   declareV1: {
-    senderAddress?: FieldElement;
-    maxFee?: FieldElement;
+    senderAddress: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    classHash?: FieldElement;
-    nonce?: FieldElement;
+    classHash: FieldElement;
+    nonce: FieldElement;
   };
 };
 ```
@@ -334,12 +343,12 @@ export type DeclareTransactionV1 = {
 export type DeclareTransactionV2 = {
   _tag: "declareV2";
   declareV2: {
-    senderAddress?: FieldElement;
-    maxFee?: FieldElement;
+    senderAddress: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    classHash?: FieldElement;
-    nonce?: FieldElement;
-    compiledClassHash?: FieldElement;
+    classHash: FieldElement;
+    nonce: FieldElement;
+    compiledClassHash: FieldElement;
   };
 };
 ```
@@ -354,31 +363,20 @@ export type DeclareTransactionV2 = {
 - `compiledClassHash`: the compiled class hash of the contract.
 
 ```ts
-export type ResourceBounds = {
-  maxAmount?: bigint;
-  maxPricePerUnit?: bigint;
-};
-
-export type ResourceBoundsMapping = {
-  l1Gas?: ResourceBounds;
-  l2Gas?: ResourceBounds;
-};
-
 export type DeclareTransactionV3 = {
   _tag: "declareV3";
   declareV3: {
-    senderAddress?: FieldElement;
-    maxFee?: FieldElement;
+    senderAddress: FieldElement;
     signature: FieldElement[];
-    classHash?: FieldElement;
-    nonce?: FieldElement;
-    compiledClassHash?: FieldElement;
-    resourceBounds?: ResourceBoundsMapping;
-    tip?: bigint;
+    classHash: FieldElement;
+    nonce: FieldElement;
+    compiledClassHash: FieldElement;
+    resourceBounds: ResourceBoundsMapping;
+    tip: bigint;
     paymasterData: FieldElement[];
     accountDeploymentData: FieldElement[];
-    nonceDataAvailabilityMode?: "l1" | "l2";
-    feeDataAvailabilityMode?: "l1" | "l2";
+    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
   };
 };
 ```
@@ -386,7 +384,6 @@ export type DeclareTransactionV3 = {
 **Properties**
 
 - `senderAddress`: the address of the account that will send the transaction.
-- `maxFee`: the maximum fee for the transaction.
 - `signature`: the signature of the transaction.
 - `classHash`: the class hash of the contract.
 - `nonce`: the nonce of the transaction.
@@ -402,12 +399,12 @@ export type DeclareTransactionV3 = {
 export type DeployAccountTransactionV1 = {
   _tag: "deployAccountV1";
   deployAccountV1: {
-    maxFee?: FieldElement;
+    maxFee: FieldElement;
     signature: FieldElement[];
-    nonce?: FieldElement;
-    contractAddressSalt?: FieldElement;
+    nonce: FieldElement;
+    contractAddressSalt: FieldElement;
     constructorCalldata: FieldElement[];
-    classHash?: FieldElement;
+    classHash: FieldElement;
   };
 };
 ```
@@ -426,16 +423,15 @@ export type DeployAccountTransactionV3 = {
   _tag: "deployAccountV3";
   deployAccountV3: {
     signature: FieldElement[];
-    nonce?: FieldElement;
-    contractAddressSalt?: FieldElement;
+    nonce: FieldElement;
+    contractAddressSalt: FieldElement;
     constructorCalldata: FieldElement[];
-    n;
-    classHash?: FieldElement;
-    resourceBounds?: ResourceBoundsMapping;
-    tip?: bigint;
+    classHash: FieldElement;
+    resourceBounds: ResourceBoundsMapping;
+    tip: bigint;
     paymasterData: FieldElement[];
-    nonceDataAvailabilityMode?: "l1" | "l2";
-    feeDataAvailabilityMode?: "l1" | "l2";
+    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
   };
 };
 ```
@@ -460,8 +456,8 @@ The receipt of a transaction contains information about the execution of the tra
 ```ts
 export type TransactionReceipt = {
   filterIds: number[];
-  meta?: TransactionReceiptMeta;
-  receipt?:
+  meta: TransactionReceiptMeta;
+  receipt:
     | InvokeTransactionReceipt
     | L1HandlerTransactionReceipt
     | DeclareTransactionReceipt
@@ -470,11 +466,11 @@ export type TransactionReceipt = {
 };
 
 export type TransactionReceiptMeta = {
-  transactionIndex?: number;
-  transactionHash?: FieldElement;
-  actualFee?: FeePayment;
-  executionResources?: ExecutionResources;
-  executionResult?: ExecutionSucceeded | ExecutionReverted;
+  transactionIndex: number;
+  transactionHash: FieldElement;
+  actualFee: FeePayment;
+  executionResources: ExecutionResources;
+  executionResult: ExecutionSucceeded | ExecutionReverted;
 };
 
 export type InvokeTransactionReceipt = {
@@ -485,7 +481,7 @@ export type InvokeTransactionReceipt = {
 export type L1HandlerTransactionReceipt = {
   _tag: "l1Handler";
   l1Handler: {
-    messageHash?: Uint8Array;
+    messageHash: Uint8Array;
   };
 };
 
@@ -497,14 +493,14 @@ export type DeclareTransactionReceipt = {
 export type DeployTransactionReceipt = {
   _tag: "deploy";
   deploy: {
-    contractAddress?: FieldElement;
+    contractAddress: FieldElement;
   };
 };
 
 export type DeployAccountTransactionReceipt = {
   _tag: "deployAccount";
   deployAccount: {
-    contractAddress?: FieldElement;
+    contractAddress: FieldElement;
   };
 };
 
@@ -516,13 +512,13 @@ export type ExecutionSucceeded = {
 export type ExecutionReverted = {
   _tag: "reverted";
   reverted: {
-    reason: string;
+    reason?: string;
   };
 };
 
 export type FeePayment = {
-  amount?: FieldElement;
-  unit?: "wei" | "strk";
+  amount: FieldElement;
+  unit: "wei" | "fri" | "unknown";
 };
 ```
 
@@ -539,13 +535,14 @@ A message to L1 is sent by a transaction.
 ```ts
 export type MessageToL1 = {
   filterIds: number[];
-  fromAddress?: FieldElement;
-  toAddress?: FieldElement;
+  fromAddress: FieldElement;
+  toAddress: FieldElement;
   payload: FieldElement[];
-  messageIndex?: number;
-  transactionIndex?: number;
-  transactionHash?: FieldElement;
-  transactionStatus?: "succeeded" | "reverted";
+  messageIndex: number;
+  messageIndexInTransaction: number;
+  transactionIndex: number;
+  transactionHash: FieldElement;
+  transactionStatus: "succeeded" | "reverted" | "unknown";
 };
 ```
 
@@ -555,6 +552,7 @@ export type MessageToL1 = {
 - `toAddress`: the address of the contract that received the message.
 - `payload`: the payload of the message.
 - `messageIndex`: the index of the message in the block.
+- `messageIndexInTransaction`: the index of the message in its transaction.
 - `transactionIndex`: the index of the transaction that sent the message.
 - `transactionHash`: the hash of the transaction that sent the message.
 - `transactionStatus`: the status of the transaction that sent the message.
@@ -572,13 +570,13 @@ A storage diff is a change to the storage of a contract.
 ```ts
 export type StorageDiff = {
   filterIds: number[];
-  contractAddress?: FieldElement;
+  contractAddress: FieldElement;
   storageEntries: StorageEntry[];
 };
 
 export type StorageEntry = {
-  key?: FieldElement;
-  value?: FieldElement;
+  key: FieldElement;
+  value: FieldElement;
 };
 ```
 
@@ -601,7 +599,7 @@ A change in the declared or deployed contracts.
 ```ts
 export type ContractChange = {
   filterIds: number[];
-  change?: DeclaredClass | ReplacedClass | DeployedContract;
+  change: DeclaredClass | ReplacedClass | DeployedContract;
 };
 
 export type DeclaredClass = {
@@ -640,8 +638,8 @@ A change in the nonce of a contract.
 ```ts
 export type NonceUpdate = {
   filterIds: number[];
-  contractAddress?: FieldElement;
-  nonce?: FieldElement;
+  contractAddress: FieldElement;
+  nonce: FieldElement;
 };
 ```
 

@@ -2,7 +2,7 @@
 title: DNA v2 architecture
 description: "Discover how DNA achieves best-in-class performance for indexing onchain data."
 diataxis: explanation
-updatedAt: 2026-10-07
+updatedAt: 2026-10-29
 ---
 
 # DNA v2 architecture
@@ -76,9 +76,10 @@ The DNA service is comprised of several components:
 
 ### Ingestion service
 
-The ingestion service fetches blocks from Starknet and stores them into
-Object Storage. This service is the only chain-specific service in DNA, all
-other components work on generic data-structures.
+The ingestion service fetches blocks from Starknet and stores them in Object
+Storage. The Starknet implementation translates provider responses into indexed
+fragments. Shared infrastructure handles ingestion, storage, compaction, and
+streaming.
 
 Serving onchain data requires serving a high-volume of data filtered by a
 relatively small number of columns. When designing DNA, we took a few decisions
@@ -96,7 +97,7 @@ to identify them. There are four different types of fragments:
 
 - index: a collection of indices, the fragment id is `0`.
   Indices are grouped by the fragment they index.
-- join: a collection of join indices, the fragment id is `254`.
+- join: a collection of join indices, the fragment id is `255`.
   Join indices are also grouped by the source fragment index.
 - header: the block header, the fragment id is `1`. Header are stored as
   pre-serialized protobuf messages.
@@ -145,15 +146,16 @@ block in the chain.
  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-On Starknet, the ingestion service is also responsible for
-periodically refreshing the mempool (pending) block data and uploading it into
-Object Storage. This works exactly as for all other blocks.
+On Starknet, the ingestion service can also refresh pre-confirmed (pending)
+block data and upload it into Object Storage. Enable this with
+`--starknet.ingest-pre-confirmed`; it is disabled by default.
 
 The ingestion service tracks the canonical chain and uploads it to Object Storage.
 This data is used by the stream service to track online and offline chain
 reorganizations.
 
-The ingestion service stores its data on etcd. Stream services subscribe to
+The ingestion service stores coordination state and mutable pointers in etcd;
+bulk block data remains in Object Storage. Stream services subscribe to
 etcd updates to receive notifications about new blocks ingested and other
 changes to the chain (for example changes to the finalized block).
 
@@ -246,7 +248,7 @@ my-chain
     │   ├── header
     │   ├── index
     │   ├── join
-    │   ├── log
+    │   ├── event
     │   ├── receipt
     │   └── transaction
     ├── 000020907000
