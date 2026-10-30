@@ -76,6 +76,7 @@ export type EventFilter = {
   includeReceipt?: boolean;
   includeMessages?: boolean;
   includeSiblings?: boolean;
+  includeTransactionTrace?: boolean;
 };
 ```
 
@@ -96,6 +97,7 @@ export type EventFilter = {
   emitted the event.
 - `includeSiblings`: also return all other events emitted by the same transaction
   that emitted the matched event.
+- `includeTransactionTrace`: also return the transaction trace, when available.
 
 **Examples**
 
@@ -247,6 +249,7 @@ export type TransactionFilter = {
   includeReceipt?: boolean;
   includeMessages?: boolean;
   includeEvents?: boolean;
+  includeTrace?: boolean;
   transactionType?:
     | InvokeTransactionV0Filter
     | InvokeTransactionV1Filter
@@ -269,6 +272,7 @@ export type TransactionFilter = {
 - `includeReceipt`: also return the receipt of the transaction.
 - `includeMessages`: also return the messages to L1 sent by the transaction.
 - `includeEvents`: also return the events emitted by the transaction.
+- `includeTrace`: also return the transaction trace, when the server has ingested it.
 - `transactionType`: filter by transaction type.
 
 **Examples**
@@ -305,7 +309,7 @@ const filter: Filter = {
 
 ### Messages
 
-Filter messages from L1 to Starknet.
+Filter messages sent from Starknet to L1.
 
 ```ts
 export type MessageToL1Filter = {
@@ -316,6 +320,7 @@ export type MessageToL1Filter = {
   includeTransaction?: boolean;
   includeReceipt?: boolean;
   includeEvents?: boolean;
+  includeTransactionTrace?: boolean;
 };
 ```
 
@@ -330,6 +335,9 @@ export type MessageToL1Filter = {
   message.
 - `includeEvents`: also return the events emitted by the transaction that sent
   the message.
+- `includeTransactionTrace`: also return the transaction trace, when available.
+
+Trace inclusion requires the server to ingest traces (`--starknet.ingest-traces`).
 
 ### Storage diff
 
