@@ -26,6 +26,12 @@ const database = drizzle({
 
 ### Arguments
 
+**type: "pglite" | "node-postgres"**
+
+Select the database driver explicitly so TypeScript infers its database type.
+Use `pglite` with `memory://` for an in-memory database, or `node-postgres` with a
+PostgreSQL connection string.
+
 **schema: TSchema**
 
 A standard Drizzle schema, that is a map of tables.
@@ -70,7 +76,8 @@ The name of the indexer. The default is the filename of the indexer.
 
 **schema: TSchema**
 
-The Drizzle schema containing the tables used by indexers.
+The extracted relational schema, defaulting to `db._.schema`. Normally, specify
+your tables with `drizzle({ schema })` and leave this option unset.
 
 **idColumn: string | IdColumnMap**
 

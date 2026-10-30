@@ -2,7 +2,7 @@
 title: Drizzle's plugin internals
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2025-03-30
+updatedAt: 2026-10-30
 ---
 
 # Drizzle's plugin internals
@@ -25,9 +25,11 @@ indexer.hooks.hook("handler:middleware", async ({ use }) => {
       // Assign the transaction to the context, to be accessed using useDrizzleStorage
       context.db = txn;
 
-      await next();
-
-      delete context.db;
+      try {
+        await next();
+      } finally {
+        delete context.db;
+      }
 
       // Update the indexer's state with cursor.
       await updateState(txn);
@@ -55,7 +57,7 @@ The name of the audit table is `airfoil.reorg_rollback` and has the following sc
 | n          | integer      |  not null default ... |
 | op         | character(1) |  not null             |
 | table_name | text         |  not null             |
-| cursor     | integer      |  not null             |
+| cursor     | bigint       |  not null             |
 | row_id     | text         |                       |
 | row_value  | jsonb        |                       |
 | indexer_id | text         |  not null             |
@@ -64,7 +66,9 @@ The name of the audit table is `airfoil.reorg_rollback` and has the following sc
 
 The data stored in the `row_value` column is specific to each operation (INSERT, DELETE, UPDATE) contains the data needed to revert the operation. Notice that the table's row must be JSON-serializable.
 
-At each block, the plugin registers a trigger for each table managed by the indexer. At the end of the transaction, the trigger inserts data into the audit table.
+The plugin registers triggers on the tables managed by the indexer. During
+non-finalized block processing, each insert, update, or delete records a rollback
+entry in the same database transaction.
 
 The audit table is periodically pruned to remove snapshots of data that is now finalized.
 
@@ -72,9 +76,13 @@ The audit table is periodically pruned to remove snapshots of data that is now f
 
 When a chain reorganization is detected, all operations in the audit table where `cursor` is greater than the new chain's head are reverted in reverse order.
 
-- `op = INSERT`: the row with id `row_id` is deleted from the table.
-- `op = DELETE`: the row with id `row_id` is inserted back into the table, with the value stored in `row_value`.
-- `op = UPDATE`: the row with id `row_id` is updated in the table, with the value stored in `row_value`.
+- `op = I` (INSERT): the row with id `row_id` is deleted from the table.
+- `op = D` (DELETE): the row with id `row_id` is inserted back into the table, with the value stored in `row_value`.
+- `op = U` (UPDATE): the row with id `row_id` has its non-ID fields restored from
+  `row_value`. The configured ID must remain immutable.
+
+These operations are subject to the plugin's
+[rollback limitations](/docs/storage/drizzle-pg#current-sdk-rollback-limitations).
 
 ## State persistence
 
@@ -87,7 +95,7 @@ The checkpoints table contains the last indexed block for each indexer.
 | Column     | Type         | Modifiers             |
 |------------+--------------+-----------------------|
 | id         | text         |  primary key          |
-| order_key  | integer      |  not null             |
+| order_key  | bigint       |  not null             |
 | unique_key | text         |                       |
 +------------+--------------+-----------------------+
 ```
@@ -100,7 +108,7 @@ The filters table is used to manage the dynamic filter of factory indexers. It c
 |------------+--------------+-----------------------|
 | id         | text         |  not null             |
 | filter     | text         |  not null             |
-| from_block | integer      |  not null             |
-| to_block   | integer      |  default null         |
+| from_block | bigint       |  not null             |
+| to_block   | bigint       |  default null         |
 +------------+--------------+-----------------------+
 ```
