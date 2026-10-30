@@ -71,7 +71,8 @@ The directory where to look for `*.indexer.ts` or `.indexer.js` files. Defaults 
 
 **`hooks`**
 
-Project level [hooks](/docs/getting-started/plugins).
+Project lifecycle hooks, such as `rolldown:before`, `compiled`, and `close`.
+See the [CLI hook definitions](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/packages/cli/src/types/hooks.ts).
 
 **`debug: boolean`**
 
@@ -91,4 +92,6 @@ Shorthand for `rolldownConfig.resolve.exportConditions`.
 
 **`watchOptions: WatchOptions`**
 
-Configure Rolldown's file watcher. Defaults to `{ignore: ["**/node_modules/**", "**/.apibara/**"]}`.
+Configure Rolldown's file watcher using options such as `exclude`. By default,
+the CLI excludes generated output, dependencies, Git files, and the
+`apibara.config` file, which has its own watcher.
