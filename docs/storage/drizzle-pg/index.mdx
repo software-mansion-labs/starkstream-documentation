@@ -2,7 +2,7 @@
 title: Drizzle with PostgreSQL
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-30
 ---
 
 # Drizzle with PostgreSQL
@@ -17,13 +17,14 @@ You can add an indexer that uses Drizzle for storage by selecting "PostgreSQL"
 in the "Storage" section when creating an indexer.
 
 The CLI automatically updates your `package.json` to add all necessary dependencies.
+Run `npm install @apibara/plugin-drizzle@latest` to use the latest stable plugin.
 
 ### Manually
 
 To use Drizzle with PostgreSQL, you need to install the following dependencies:
 
 ```bash [Terminal]
-npm install drizzle-orm pg @apibara/plugin-drizzle@next
+npm install drizzle-orm pg @apibara/plugin-drizzle@latest
 ```
 
 We recommend using Drizzle Kit to manage the database schema.
@@ -51,22 +52,24 @@ Add the `drizzleStorage` plugin to your indexer's `plugins`. Notice the followin
 
 - Use the `drizzle` helper exported by `@apibara/plugin-drizzle` to create a
   drizzle instance. This method supports creating an in-memory database (powered by PgLite)
-  by specifying the `memory:` connection string.
+  by specifying the `memory://` connection string.
 - Always specify the database schema. This schema is used by the indexer to know which tables
   it needs to protect against chain reorganizations.
-- By default, the connection string is read from the `POSTGRES_CONNECTION_STRING` environment variable. If left empty, a local PGLite database will be created. This is great because it means you don't need to start Postgres on your machine to develop locally!
+- By default, the connection string is read from the `POSTGRES_CONNECTION_STRING` environment variable. If it is unset, an in-memory PGlite database will be created. An explicitly empty string does not select PGlite: omit the variable or set the connection string to `memory://` for local development.
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
+import { defineIndexer } from "apibara/indexer";
 import {
   drizzle,
   drizzleStorage,
   useDrizzleStorage,
 } from "@apibara/plugin-drizzle";
 
-import { transfers } from "@/lib/schema";
+import { transfers } from "../lib/schema";
 
 const db = drizzle({
+  type: "pglite",
   schema: {
     transfers,
   },
@@ -84,19 +87,24 @@ export default defineIndexer(StarknetStream)({
 You can use the `pgTable` function from `drizzle-orm/pg-core` to define the schema,
 no changes required.
 
-The only important thing to notice is that your table **must have an `id` column (name configurable)**
-that uniquely identifies each row. This requirement is necessary to handle chain reorganizations.
+Your table **must have an `id` column (name configurable)** with a unique,
+non-null, non-empty value for each row. Keep this identifier immutable for
+rollback support.
 Read more how the plugin handles chain reorganizations [on the internals page](/docs/storage/drizzle-pg/internals).
 
 ```ts [lib/schema.ts]
-import { bigint, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 
 export const transfers = pgTable("transfers", {
   id: uuid("id").primaryKey().defaultRandom(),
-  amount: bigint("amount", { mode: "number" }),
+  amount: text("amount"),
   transactionHash: text("transaction_hash"),
 });
 ```
+
+Store exact amounts as decimal strings using `rawAmount.toString()` on a `bigint`,
+without converting through `number`. This preserves token amounts and avoids
+numeric rollback precision loss.
 
 ## Specifying the id column
 
@@ -146,9 +154,9 @@ export default defineIndexer(StarknetStream)({
 ## Writing and reading data from within the indexer
 
 Use the `useDrizzleStorage` hook to access the current database transaction.
-This transaction behaves exactly like a regular Drizzle ORM transaction because
-it is. Thanks to the way the plugin works and handles chain reorganizations, it
-can expose the full Drizzle ORM API without any limitations.
+It returns a regular Drizzle ORM transaction. The query API is available, but
+the current plugin's rollback limitations below apply when processing data that
+has not been finalized.
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
@@ -165,7 +173,16 @@ export default defineIndexer(StarknetStream)({
 });
 ```
 
-You are not limited to inserting data, you can also update and delete rows.
+You can also update and delete rows, subject to the following rollback limits.
+
+### Current SDK rollback limitations
+
+In `@apibara/plugin-drizzle` 2.1.3, rollback can fail on single quotes in IDs or
+saved text and can round numeric values. Use immutable, non-empty IDs and store
+exact amounts as text.
+
+New indexers that can wait for finality can use `finality: "finalized"` to avoid
+rollback. This does not repair existing data or rollback history.
 
 ### Drizzle query
 
@@ -178,14 +195,16 @@ is used to automatically deduce the database schema.
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
 
-const database = drizzle({ schema, connectionString });
+const database = drizzle({ type: "node-postgres", schema, connectionString });
 
 export default defineIndexer(StarknetStream)({
   // ...
   async transform({ endCursor, block, context, finality }) {
     const { db } = useDrizzleStorage(database);
 
-    const existingToken = await db.query.tokens.findFirst({ address });
+    const existingToken = await db.query.tokens.findFirst({
+      where: (tokens, { eq }) => eq(tokens.address, address),
+    });
   },
 });
 ```
@@ -208,7 +227,7 @@ import { StarknetStream } from "@apibara/starknet";
 
 import { drizzle } from "@apibara/plugin-drizzle";
 
-const database = drizzle({ schema });
+const db = drizzle({ type: "pglite", schema });
 
 export default defineIndexer(StarknetStream)({
   // ...

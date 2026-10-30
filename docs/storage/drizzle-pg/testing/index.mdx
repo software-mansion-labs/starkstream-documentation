@@ -2,7 +2,7 @@
 title: Testing
 description: "Learn how to test your indexer's when using the Drizzle plugin."
 diataxis: how-to
-updatedAt: 2026-10-07
+updatedAt: 2026-10-29
 ---
 
 # Testing
@@ -11,27 +11,36 @@ The Drizzle plugin provides an in-memory database to simplify testing, powered b
 
 ## Indexer setup
 
-Register the Drizzle plugin with your indexer. The default configuration automatically creates a PGLite database when running tests.
+Register the Drizzle plugin with your indexer. This example explicitly uses an
+in-memory PGLite database. Define `myTable` in `lib/schema.ts` and generate its
+migrations in `drizzle` before running the test, as described in
+[database migrations](/docs/storage/drizzle-pg#database-migrations).
 
 ```ts [my-indexer.indexer.ts]
 import { drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { drizzle } from "@apibara/plugin-drizzle";
 import { StarknetStream } from "@apibara/starknet";
 import { defineIndexer } from "apibara/indexer";
+import type { ApibaraRuntimeConfig } from "apibara/types";
 
-import { myTable } from "@/lib/schema";
+import { myTable } from "../lib/schema";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   const database = drizzle({
+    type: "pglite",
+    connectionString: "memory://",
     schema: {
       myTable,
     },
   });
 
   return defineIndexer(StarknetStream)({
+    streamUrl: "https://mainnet.starkstream.io",
+    filter: { header: "always" },
     plugins: [
       drizzleStorage({
         db: database,
+        migrate: { migrationsFolder: "./drizzle" },
       }),
     ],
     async transform({ endCursor, block, context, finality }) {
@@ -54,7 +63,15 @@ If you need to initialize data in the database, you can add a hook to `run:befor
 
 ## Example
 
-The following example shows a complete end-te-end test for the indexer.
+The following example shows the structure of an end-to-end test. Fill in the
+transform and initial row values for your schema.
+
+On the first run, VCR records the requested block range from the stream, so
+`DNA_TOKEN` must be set. Subsequent runs replay the cassette locally. Keep the
+generated `cassettes` and snapshots with your tests; VCR cannot record in CI.
+
+If direct ESM tests fail with `require is not defined`, apply the
+[current package workaround](/docs/storage/drizzle-pg/faq#referenceerror-require-is-not-defined-in-tests).
 
  - Pass a custom runtime configuration to the indexer's constructor.
  - Initialize the database before running the indexer.
@@ -67,7 +84,8 @@ import { useTestDrizzleStorage } from "@apibara/plugin-drizzle";
 import { getTestDatabase } from "@apibara/plugin-drizzle/testing";
 
 // Import the indexer's constructor
-import createIndexer from "@/indexers/my-indexer.indexer";
+import createIndexer from "../indexers/my-indexer.indexer";
+import { myTable } from "../lib/schema";
 
 const vcr = createVcr();
 
@@ -98,9 +116,7 @@ describe("my indexer", () => {
     // Use the database like any other Drizzle database object
     const rows = await database.select().from(myTable);
 
-    expect(rows.map(({ _id, ...rest }) => rest)).toMatchInlineSnapshot(`
-      /* ... */
-    `);
+    expect(rows.map(({ id, ...rest }) => rest)).toMatchSnapshot();
   });
 });
 ```
