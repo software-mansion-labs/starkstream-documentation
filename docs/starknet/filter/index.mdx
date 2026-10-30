@@ -2,7 +2,7 @@
 title: Starknet filter reference
 description: "Starknet: DNA data filter reference guide."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-30
 ---
 
 # Starknet filter reference
@@ -32,7 +32,8 @@ export type FieldElement = `0x${string}`;
 
 ### Root
 
-The root filter object contains a collection of filters.
+The root filter object contains a collection of filters. Import `Filter` and
+`getSelector` from `@apibara/starknet` when using the examples below.
 Notice that providing an empty filter object is an error.
 
 ```ts
@@ -102,7 +103,7 @@ export type EventFilter = {
 - All events from a specific smart contract.
 
 ```ts
-const filter = {
+const filter: Filter = {
   events: [{ address: MY_CONTRACT }],
 };
 ```
@@ -110,7 +111,7 @@ const filter = {
 - Multiple events from the same smart contract.
 
 ```ts
-const filter = {
+const filter: Filter = {
   events: [
     {
       address: MY_CONTRACT,
@@ -127,7 +128,7 @@ const filter = {
 - Multiple events from different smart contracts.
 
 ```ts
-const filter = {
+const filter: Filter = {
   events: [
     {
       address: CONTRACT_A,
@@ -149,7 +150,7 @@ const filter = {
 - All `Transfer` events, from any contract.
 
 ```ts
-const filter = {
+const filter: Filter = {
   events: [
     {
       keys: [getSelector("Transfer")],
@@ -161,7 +162,7 @@ const filter = {
 - All "new type" `Transfer` events with indexed sender and destination addresses.
 
 ```ts
-const filter = {
+const filter: Filter = {
   events: [
     {
       keys: [getSelector("Transfer"), null, null],
@@ -263,16 +264,22 @@ export type TransactionFilter = {
 
 **Examples**
 
-- Request all transactions in a block. Notice the empty transaction filter object, this filter will match _any_ transaction.
+- Request all transactions in a block, including reverted transactions. Set
+  `transactionStatus` to `all`; omitting it selects only succeeded transactions.
 
 ```ts
-const filter = { transactions: [{}] };
+const filter: Filter = { transactions: [{ transactionStatus: "all" }] };
 ```
 
 - Request all transactions of a specific type, e.g. deploy account. In this case we specify the `deployAccountV3` variant.
 
+**SDK limitation:** `@apibara/starknet` 2.1.4 currently omits
+`transactionType` when serializing the request. The example below describes the
+intended API, but this release receives other transaction types too. Check
+`transaction.transaction._tag` in your transform until the SDK is fixed.
+
 ```ts
-const filter = {
+const filter: Filter = {
   transactions: [
     {
       transactionType: { _tag: "deployAccountV3", deployAccountV3: {} },

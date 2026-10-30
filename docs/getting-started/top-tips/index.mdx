@@ -1,7 +1,7 @@
 ---
 title: Top tips
 description: "Find most useful tips and patterns to help you get the most out of Starkstream."
-updatedAt: 2026-10-07
+updatedAt: 2026-10-30
 ---
 
 # Top tips
@@ -12,14 +12,22 @@ Find most useful tips and patterns to help you get the most out of Starkstream.
 
 ### Watching a file
 
-You can watch files for changes during indexer execution, which is useful for development workflows and dynamic configuration updates. Here's an example of how to implement file watching using Node.js's built-in `fs.watch`:
+You can watch files for changes during indexer execution, which is useful for development workflows and dynamic configuration updates. Create `./tmp/test` before starting this example, which uses Node.js's built-in `fs.watch`:
 
 ```ts [watchfile.indexer.ts]
-import { watch } from "node:fs";
+import { watch, type FSWatcher } from "node:fs";
 import { StarknetStream } from "@apibara/starknet";
 import { defineIndexer, reloadIndexer } from "apibara/indexer";
 import { useLogger } from "apibara/plugins";
 import type { ApibaraRuntimeConfig } from "apibara/types";
+
+// Keep the handle across calls to the factory during a production reload.
+let watcher: FSWatcher | undefined;
+
+function closeWatcher() {
+  watcher?.close();
+  watcher = undefined;
+}
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
@@ -31,14 +39,19 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     },
     hooks: {
       "run:before": ({ abortSignal }) => {
+        closeWatcher();
         const logger = useLogger();
         logger.info("=== FILE WATCHER SET UP ===");
 
-        watch("./tmp/test", { signal: abortSignal }, () => {
+        const currentWatcher = watch("./tmp/test", { signal: abortSignal }, () => {
+          if (watcher !== currentWatcher) return;
           logger.info("=== FILE CHANGED ===");
+          closeWatcher();
           reloadIndexer();
         });
+        watcher = currentWatcher;
       },
+      "run:after": closeWatcher,
     },
     async transform({ endCursor, finality }) {
       // ...
@@ -57,19 +70,27 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
 
 **💡 Best practices:**
 
-- Use the `abortSignal` parameter from hooks to properly clean up watchers when the indexer stops or reloads. This prevents orphaned watchers and ensures clean shutdown.
-- The abort signal is automatically triggered when the indexer is stopped or killed, making it perfect for cleanup scenarios during indexer reloads.
+- Pass the hook's `abortSignal` to `watch` so cancellation of the active run can close it.
+- In `@apibara/indexer` 2.1.3, programmatic reload and normal stream completion do not abort the per-run signal. Retain the watcher handle and close it before requesting a reload and before setting up its replacement, as above. The `run:after` hook handles normal completion but is skipped on reload, so it cannot be the only cleanup path.
+- If you run an indexer outside the CLI, close application-owned resources in your runner's `finally` block when a run fails. Process termination releases operating-system handles; it does not guarantee that JavaScript cleanup callbacks execute.
 
 ### Reloading the indexer
 
-You can programmatically reload your indexer using the `reloadIndexer()` function:
+You can programmatically reload your indexer using the `reloadIndexer()` function.
+The example below requests one reload per process. Its module-level flag survives
+factory calls during reload and resets when a new process starts.
+
+Without a storage plugin, the new run starts again from `startingBlock`. Guard a
+block-based reload condition so replaying that block does not cause an endless
+reload loop. See [indexer persistence](/docs/getting-started/indexers) when you need
+to resume from stored progress.
 
 ```ts [watchfile.indexer.ts]
-import { watch } from "node:fs";
 import { StarknetStream } from "@apibara/starknet";
 import { defineIndexer, reloadIndexer } from "apibara/indexer";
-import { useLogger } from "apibara/plugins";
 import type { ApibaraRuntimeConfig } from "apibara/types";
+
+let reloaded = false;
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
@@ -81,7 +102,8 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     },
     async transform({ endCursor, finality }) {
       // ...
-      if (endCursor?.orderKey === 150000n) {
+      if (!reloaded && endCursor?.orderKey === 150000n) {
+        reloaded = true;
         reloadIndexer();
       }
     },

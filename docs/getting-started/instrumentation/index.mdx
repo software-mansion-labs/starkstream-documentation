@@ -2,7 +2,7 @@
 title: Instrumentation - instrumentation.ts
 description: "Learn how to send metrics and traces to your observability platform using instrumentation.ts."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-29
 ---
 
 # instrumentation.ts
@@ -13,25 +13,42 @@ It's easy to add observability to your indexer using our native instrumentation 
 
 To add instrumentation to your project, create a `instrumentation.ts` file at the root (next to `apibara.config.ts`).
 
-This file should export a `register` function, this function is called _once_ by the runtime before the production indexer is started.
+This file should export a `register` function. The runtime calls it before each
+production indexer run, including a run started by `reloadIndexer()`. Keep
+process-wide telemetry initialization idempotent so a reload does not register
+duplicate OpenTelemetry providers or bind a second Prometheus exporter to the
+same port. The examples below retain an initialization flag at module scope.
+
+For instrumented indexers, use `pnpm start` with the installed CLI. See the
+[standalone startup limitation](/docs/getting-started/installation#production-build)
+before deploying the built entry directly with Node.
 
 ```ts [instrumentation.ts]
 import type { RegisterFn } from "apibara/types";
 
+let initialized = false;
+
 export const register: RegisterFn = async () => {
+  if (initialized) return;
+
   // Setup OpenTelemetry SDK exporter
+  initialized = true;
 };
 ```
 
 ### Logger
 
-You can also replace the default logger by exporting a `logger` function from `instrumentation.ts`. This function should return a `console`-like object with the same methods as `console`.
+You can also replace the default logger by exporting a `logger` function from `instrumentation.ts`. This function should return a Consola reporter with a `log` method.
 
 ```ts [instrumentation.ts]
 import type { LoggerFactoryFn } from "apibara/types";
 
 export const logger: LoggerFactoryFn = ({ indexer, indexers, preset }) => {
-  // Build console here.
+  return {
+    log({ type, args }) {
+      console.log(`[${indexer}${preset ? `:${preset}` : ""}] ${type}`, ...args);
+    },
+  };
 };
 ```
 
@@ -70,7 +87,11 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import type { RegisterFn } from "apibara/types";
 
+let initialized = false;
+
 export const register: RegisterFn = async () => {
+  if (initialized) return;
+
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
@@ -98,12 +119,13 @@ export const register: RegisterFn = async () => {
   const sdk = new NodeSDK({
     resource,
     spanProcessors,
-    metricReader,
+    metricReaders: [metricReader],
     instrumentations: [getNodeAutoInstrumentations()],
   });
 
   // Start the SDK
   sdk.start();
+  initialized = true;
 };
 ```
 
@@ -117,8 +139,10 @@ pnpm start --indexer=your-indexer
 The following metrics are available out of the box:
 
 - `current_block`: The latest block number being processed by the indexer
-- `processed_blocks_total`: Total number of blocks that have been processed
-- `reorgs_total`: Number of chain reorganizations detected and handled
+- `processed_blocks`: Total number of blocks that have been processed
+- `reorgs`: Number of chain reorganizations detected and handled
+
+The Prometheus exporter adds the `_total` suffix to the counter names.
 
 Additionally, you can observe detailed traces showing:
 
@@ -156,7 +180,11 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import type { RegisterFn } from "apibara/types";
 
+let initialized = false;
+
 export const register: RegisterFn = async () => {
+  if (initialized) return;
+
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
@@ -171,11 +199,12 @@ export const register: RegisterFn = async () => {
   // Configure the SDK
   const sdk = new NodeSDK({
     resource,
-    metricReader: prometheusExporter,
+    metricReaders: [prometheusExporter],
     instrumentations: [getNodeAutoInstrumentations()],
   });
 
   sdk.start();
+  initialized = true;
 };
 ```
 
@@ -204,11 +233,16 @@ Update the `instrumentation.ts` file at the root of your project:
 import * as Sentry from "@sentry/node";
 import type { RegisterFn } from "apibara/types";
 
+let initialized = false;
+
 export const register: RegisterFn = async () => {
+  if (initialized) return;
+
   Sentry.init({
     dsn: "__YOUR_DSN__",
     tracesSampleRate: 1.0,
   });
+  initialized = true;
 };
 ```
 
