@@ -2,7 +2,7 @@
 title: Instrumentation - instrumentation.ts
 description: "Learn how to send metrics and traces to your observability platform using instrumentation.ts."
 diataxis: reference
-updatedAt: 2025-03-19
+updatedAt: 2026-10-07
 ---
 
 # instrumentation.ts
@@ -39,7 +39,7 @@ export const logger: LoggerFactoryFn = ({ indexer, indexers, preset }) => {
 
 ### OpenTelemetry with OpenTelemetry Collector
 
-The OpenTelemetry Collector offers a vendor-agnostic implementation for receiving, processing, and exporting telemetry data. Using the collector with Apibara allows you to collect and send both metrics and traces to your preferred observability backend.
+The OpenTelemetry Collector offers a vendor-agnostic implementation for receiving, processing, and exporting telemetry data. Using the collector with Starkstream allows you to collect and send both metrics and traces to your preferred observability backend.
 
 #### 1. Install required dependencies
 
@@ -74,7 +74,7 @@ export const register: RegisterFn = async () => {
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: "apibara",
+      [ATTR_SERVICE_NAME]: "starkstream-indexer",
       [ATTR_SERVICE_VERSION]: "1.0.0",
     })
   );
@@ -160,12 +160,12 @@ export const register: RegisterFn = async () => {
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: "apibara",
+      [ATTR_SERVICE_NAME]: "starkstream-indexer",
       [ATTR_SERVICE_VERSION]: "1.0.0",
     })
   );
 
-  // By default port 9464 will be exposed on the apibara app
+  // By default port 9464 will be exposed on the indexer app
   const prometheusExporter = new PrometheusExporter();
 
   // Configure the SDK

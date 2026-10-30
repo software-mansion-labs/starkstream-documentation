@@ -2,7 +2,7 @@
 title: Starknet filter reference
 description: "Starknet: DNA data filter reference guide."
 diataxis: reference
-updatedAt: 2025-04-17
+updatedAt: 2026-10-07
 ---
 
 # Starknet filter reference
@@ -22,7 +22,7 @@ You can use this ID to build powerful abstractions in your indexers.
 
 ## Field elements
 
-Apibara represents Starknet field elements as hex-encode strings.
+Starkstream represents Starknet field elements as hex-encode strings.
 
 ```ts
 export type FieldElement = `0x${string}`;
@@ -63,7 +63,7 @@ The values have the following meaning:
 
 ### Events
 
-Events are the most common filter used by Apibara users. You can filter by smart contract or event selector.
+Events are the most common filter used by Starkstream users. You can filter by smart contract or event selector.
 
 ```ts
 export type EventFilter = {
