@@ -2,7 +2,7 @@
 title: Drizzle's plugin API reference
 description: "Learn all available options and functions in the Drizzle's plugin."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-10-29
 ---
 
 # Drizzle's plugin API reference
@@ -16,6 +16,7 @@ import { drizzle } from "@apibara/plugin-drizzle";
 
 // Here `transfers` and `balances` are standard Drizzle tables.
 const database = drizzle({
+  type: "pglite",
   schema: {
     transfers,
     balances,
@@ -79,6 +80,7 @@ If your tables use different names for the id columns, you can pass a record to 
 
 ```ts
 drizzleStorage({
+  db: database,
   idColumn: {
     "balances": "address",
     "*": "id"

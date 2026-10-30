@@ -2,7 +2,7 @@
 title: Indexers
 description: "Learn how to create indexers to stream and transform onchain data."
 diataxis: explanation
-updatedAt: 2026-10-28
+updatedAt: 2026-10-29
 ---
 
 # Building indexers
@@ -20,7 +20,7 @@ The following example shows how to create a Starknet indexer.
 
 ```ts [starknet.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
-import { defineIndexer } from "@apibara/indexer";
+import { defineIndexer } from "apibara/indexer";
 
 export default defineIndexer(StarknetStream)({
   /* ... */
@@ -34,7 +34,7 @@ To configure the indexer at runtime, export a function that takes the configurat
 ```ts
 import { StarknetStream } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
-import { defineIndexer } from "@apibara/indexer";
+import { defineIndexer } from "apibara/indexer";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
@@ -73,7 +73,7 @@ The following example shows a minimal indexer that streams block headers and pri
 
 ```ts [starknet.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
-import { defineIndexer } from "@apibara/indexer";
+import { defineIndexer } from "apibara/indexer";
 
 export default defineIndexer(StarknetStream)({
   streamUrl: "https://mainnet.starkstream.io",
@@ -96,26 +96,31 @@ The `factory` function adds data filters at runtime. Use it to track Starknet fa
 - **`block`**<span class="arg-type">`TBlock`</span><br/><span class="arg-description">The block received from the DNA stream. See the [Starknet data reference](/docs/networks/starknet/data).</span>
 - **`context`**<span class="arg-type">`object`</span><br/><span class="arg-description">The context shared between the indexer and the plugins.</span>
 
-The following example shows a minimal indexer that streams `PairCreated` events from a Starknet factory to detect new pools, and then streams the pool's events.
+The following example follows the [Starknet factory example in the TypeScript SDK](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/examples/cli-drizzle/indexers/3-starknet-factory.indexer.ts). It streams `PairCreated` events from a Starknet factory, then adds filters for the new pools' `Swap` events. The pair address is decoded from the factory's event data.
 
 ```ts [starknet-factory.indexer.ts]
-import { StarknetStream } from "@apibara/starknet";
-import { defineIndexer } from "@apibara/indexer";
+import { StarknetStream, getSelector } from "@apibara/starknet";
+import { defineIndexer } from "apibara/indexer";
 
 export default defineIndexer(StarknetStream)({
   streamUrl: "https://mainnet.starkstream.io",
+  startingBlock: 800_000n,
   filter: {
     events: [
       {
-        /* ... */
+        address:
+          "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd",
+        keys: [getSelector("PairCreated")],
       },
     ],
   },
-  async factory({ block }) {
-    const { events } = block;
-    return {
-      /* ... */
-    };
+  async factory({ block: { events } }) {
+    const poolEvents = events.flatMap((event) => {
+      const address = event.data?.[2];
+      return address ? [{ address, keys: [getSelector("Swap")] }] : [];
+    });
+
+    return poolEvents.length > 0 ? { filter: { events: poolEvents } } : {};
   },
   async transform({ block }) {
     const { header, events } = block;

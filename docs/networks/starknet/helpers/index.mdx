@@ -2,7 +2,7 @@
 title: Starknet helpers reference
 description: "Starknet: DNA helpers reference guide."
 diataxis: reference
-updatedAt: 2025-09-03
+updatedAt: 2026-10-28
 ---
 
 # Starknet helpers reference
@@ -45,22 +45,23 @@ This function returns a transaction by its index in the block, if any.
 import { getTransaction } from "@apibara/starknet";
 
 // Accept `{ transactions: readonly Transaction[] }`.
-const transaction = getTransaction(event.transactionIndex, block);
+const transactionFromBlock = getTransaction(event.transactionIndex, block);
 
 // Accept `readonly Transaction[]`.
-const transaction = getTransaction(event.transactionIndex, block.transactions);
+const transactionFromArray = getTransaction(event.transactionIndex, block.transactions);
 ```
 
 ### `getReceipt`
 
-This function returns a receipt by its index in the block, if any.
+This function returns a receipt by the transaction's index in the block, if any.
+When filtering events, set `includeReceipt: true` to receive their receipts.
 
 ```ts
 import { getReceipt } from "@apibara/starknet";
 
-// Accept `{ receipts: readonly Receipt[] }`.
-const receipt = getReceipt(event.receiptIndex, block);
+// Accept `{ receipts: readonly TransactionReceipt[] }`.
+const receiptFromBlock = getReceipt(event.transactionIndex, block);
 
-// Accept `readonly Receipt[]`.
-const receipt = getReceipt(event.receiptIndex, block.receipts);
+// Accept `readonly TransactionReceipt[]`.
+const receiptFromArray = getReceipt(event.transactionIndex, block.receipts);
 ```
