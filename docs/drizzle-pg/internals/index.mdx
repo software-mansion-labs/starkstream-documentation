@@ -2,7 +2,7 @@
 title: Drizzle's plugin internals
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2026-10-30
+updatedAt: 2026-11-04
 ---
 
 # Drizzle's plugin internals
@@ -25,11 +25,8 @@ indexer.hooks.hook("handler:middleware", async ({ use }) => {
       // Assign the transaction to the context, to be accessed using useDrizzleStorage
       context.db = txn;
 
-      try {
-        await next();
-      } finally {
-        delete context.db;
-      }
+      await next();
+      delete context.db;
 
       // Update the indexer's state with cursor.
       await updateState(txn);
