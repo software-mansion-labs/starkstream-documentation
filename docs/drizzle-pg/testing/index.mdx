@@ -2,7 +2,7 @@
 title: Testing
 description: "Learn how to test your indexer's when using the Drizzle plugin."
 diataxis: how-to
-updatedAt: 2026-10-29
+updatedAt: 2026-11-04
 ---
 
 # Testing
@@ -66,8 +66,10 @@ If you need to initialize data in the database, you can add a hook to `run:befor
 The following example shows the structure of an end-to-end test. Fill in the
 transform and initial row values for your schema.
 
-On the first run, VCR records the requested block range from the stream, so
-`DNA_TOKEN` must be set. Subsequent runs replay the cassette locally. Keep the
+On the first run, VCR records the requested block range from the stream. The
+client reads `DNA_TOKEN` and only warns when it is unset, but the hosted
+Starkstream endpoints require it, so set it for the recording run. Subsequent
+runs replay the cassette locally. Keep the
 generated `cassettes` and snapshots with your tests; VCR cannot record in CI.
 
 If direct ESM tests fail with `require is not defined`, apply the
@@ -95,7 +97,7 @@ describe("my indexer", () => {
       /* runtime configuration */
     });
 
-    const testResult = await vcr.run("starknet-usdc-transfers", indexer, {
+    const testResult = await vcr.run("my-indexer", indexer, {
       range: {
         fromBlock: 800_000n,
         toBlock: 800_005n,

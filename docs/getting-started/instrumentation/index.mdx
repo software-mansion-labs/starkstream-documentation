@@ -2,7 +2,7 @@
 title: Instrumentation - instrumentation.ts
 description: "Learn how to send metrics and traces to your observability platform using instrumentation.ts."
 diataxis: reference
-updatedAt: 2026-10-29
+updatedAt: 2026-11-04
 ---
 
 # instrumentation.ts
@@ -19,7 +19,11 @@ process-wide telemetry initialization idempotent so a reload does not register
 duplicate OpenTelemetry providers or bind a second Prometheus exporter to the
 same port. The examples below retain an initialization flag at module scope.
 
-For instrumented indexers, use `pnpm start` with the installed CLI. See the
+For instrumented indexers, use `pnpm run start`: pnpm's bin shim exports
+`NODE_PATH`, which lets the built bundle resolve the instrumentation file and
+its OpenTelemetry dependencies under pnpm's isolated layout. Running
+`node .apibara/build/start.mjs` directly has no `NODE_PATH`, and the resolution
+error is swallowed, so telemetry is silently skipped. See the
 [standalone startup limitation](/docs/getting-started/installation#production-build)
 before deploying the built entry directly with Node.
 

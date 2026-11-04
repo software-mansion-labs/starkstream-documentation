@@ -2,7 +2,7 @@
 title: Starknet event decoder
 description: "Starknet: Event decoder reference guide."
 diataxis: reference
-updatedAt: 2026-10-30
+updatedAt: 2026-11-04
 ---
 
 # Starknet event decoder
@@ -113,12 +113,16 @@ pub struct BookRemoved {
 The Starkstream SDK automatically infers the following event type (without code generation).
 
 ```typescript
-type BookAdded = { id: bigint, title: bigint, author: bigint };
-type BookRemoved = { id: bigint };
+type BookAdded = { id: number, title: bigint, author: bigint };
+type BookRemoved = { id: number };
 type Event =
   { _tag: "BookAdded", BookAdded: BookAdded }
   | { _tag: "BookRemoved", BookRemoved: BookRemoved };
 ```
+
+Note that at runtime the parser returns a `bigint` for `u8`, `u16`, and `u32` fields
+even though the inferred type is `number`, so convert the value explicitly before
+comparing or storing it.
 
 This type works very well with the Typescript `switch` statement.
 

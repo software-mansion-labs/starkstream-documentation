@@ -2,7 +2,7 @@
 title: Installation
 description: "Learn how to install and get started with Starkstream."
 diataxis: tutorial
-updatedAt: 2026-10-30
+updatedAt: 2026-11-04
 ---
 
 # Installation
@@ -248,11 +248,16 @@ Once the indexers are built, you can run them in two ways:
   `--indexer` flag. In this tutorial we are going to use this method.
 - Running `.apibara/build/start.mjs` with Node. This is useful when building Docker images for your indexers.
 
-**Instrumentation limitation:** With `apibara` 2.1.4 and pnpm's isolated dependency
-layout, the standalone Node entry can silently skip OpenTelemetry instrumentation
-when a transitive dependency cannot be resolved. For instrumented indexers, use
-the installed `apibara start` command through `pnpm run start`, as shown below.
-Verify that telemetry is received before relying on a standalone deployment.
+**Instrumentation limitation:** `apibara start` runs the same built bundle
+(`.apibara/build/start.mjs`), but when it is launched through `pnpm run start`,
+pnpm's bin shim exports `NODE_PATH` pointing at `node_modules/.pnpm/node_modules`,
+which lets the bundle's `require()` of the instrumentation file and its transitive
+OpenTelemetry dependencies resolve. Running `node .apibara/build/start.mjs`
+directly has no `NODE_PATH`, and the CLI's instrumentation loader swallows the
+resolution error, so telemetry is silently skipped. For instrumented indexers, use
+`pnpm run start` as shown below, or set `NODE_PATH` yourself or use a hoisted
+layout (`node-linker=hoisted`). Verify that telemetry is received before relying
+on a standalone deployment.
 
 :::cli-command
 

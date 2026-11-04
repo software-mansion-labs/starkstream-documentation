@@ -2,7 +2,7 @@
 title: Drizzle with PostgreSQL
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2026-10-30
+updatedAt: 2026-11-04
 ---
 
 # Drizzle with PostgreSQL
@@ -194,13 +194,25 @@ is used to automatically deduce the database schema.
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
+import { defineIndexer } from "apibara/indexer";
+import {
+  drizzle,
+  drizzleStorage,
+  useDrizzleStorage,
+} from "@apibara/plugin-drizzle";
 
-const database = drizzle({ type: "node-postgres", schema, connectionString });
+import { tokens } from "../lib/schema";
+
+const database = drizzle({ type: "node-postgres", schema: { tokens } });
 
 export default defineIndexer(StarknetStream)({
   // ...
+  plugins: [drizzleStorage({ db: database })],
   async transform({ endCursor, block, context, finality }) {
     const { db } = useDrizzleStorage(database);
+
+    const address = block.events[0]?.address;
+    if (!address) return;
 
     const existingToken = await db.query.tokens.findFirst({
       where: (tokens, { eq }) => eq(tokens.address, address),
