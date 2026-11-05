@@ -8,8 +8,7 @@ updatedAt: 2026-11-05
 # Starknet data reference
 
 This page contains reference about the available data in Starknet DNA streams.
-The definitions below expand union variants to show the decoded value shapes.
-Import SDK types in application code; the SDK also marks its arrays as read-only.
+All types are exported from `@apibara/starknet`.
 
 ### Related pages
 
@@ -23,8 +22,7 @@ This field contains the list of _all filter IDs_ that matched a piece of data.
 
 ## Nullable fields
 
-Fields marked with `?` can be absent. The TypeScript SDK requires the other
-fields when decoding data and throws if required data is missing.
+Fields marked with `?` can be absent.
 
 ## Field elements
 
@@ -543,14 +541,6 @@ export type DataAvailabilityResources = {
 };
 ```
 
-**Properties**
-
-- `meta.transactionIndex`: the index of the transaction in the block.
-- `meta.transactionHash`: the hash of the transaction.
-- `meta.actualFee`: the fee paid by the transaction, with its unit.
-- `meta.executionResources`: the computation and data availability resources used by the transaction.
-- `meta.executionResult`: whether the transaction succeeded or reverted, with the revert reason when available.
-
 **Relevant filters**
 
 - `filter.transactions[].includeReceipt`
@@ -671,30 +661,13 @@ export type FunctionInvocation = {
 
 **Properties**
 
-- `transactionIndex`: the index of the traced transaction in the block.
-- `transactionHash`: the hash of the traced transaction.
 - `traceRoot`: the trace root, one variant per transaction type.
-
-- `validateInvocation`: the `__validate__` call.
-- `executeInvocation`: the `__execute__` call, either a successful invocation or the revert reason.
-- `feeTransferInvocation`: the fee transfer call.
-- `constructorInvocation`: the constructor call of the deployed account.
-- `functionInvocation`: the L1 handler function call.
-
-- `contractAddress`: the address of the called contract.
-- `entryPointSelector`: the selector of the called function.
-- `calldata`: the calldata of the call.
-- `callerAddress`: the address of the caller.
-- `classHash`: the class hash of the called contract.
+- `validateInvocation`, `executeInvocation`, `feeTransferInvocation`: the `__validate__`, `__execute__`, and fee transfer calls. `executeInvocation` is either the invocation or the revert reason.
 - `callType`: how the function was called.
-- `result`: the values returned by the call.
-- `calls`: the nested function invocations.
-- `events`: the indices, within the transaction, of the events emitted by the call.
-- `messages`: the indices, within the transaction, of the messages sent by the call.
+- `events`, `messages`: the indices, within the transaction, of the events emitted and messages sent by the call.
 
-Traces are only available when the server ingests them
-(`--starknet.ingest-traces`). See the
-[Starknet filter reference](/docs/starknet/filter#transactions) for details.
+Traces are only returned when the server ingests them, see the
+[Starknet filter reference](/docs/starknet/filter#transactions).
 
 **Relevant filters**
 

@@ -56,7 +56,7 @@ The name of the audit table is `airfoil.reorg_rollback` and has the following sc
 +------------+--------------+-----------------------+
 | Column     | Type         | Modifiers             |
 |------------+--------------+-----------------------|
-| n          | integer      |  not null default ... |
+| n          | integer      |  primary key          |
 | op         | character(1) |  not null             |
 | table_name | text         |  not null             |
 | cursor     | bigint       |  not null             |
@@ -68,13 +68,10 @@ The name of the audit table is `airfoil.reorg_rollback` and has the following sc
 
 The data stored in the `row_value` column is specific to each operation (INSERT, DELETE, UPDATE) contains the data needed to revert the operation. Notice that the table's row must be JSON-serializable.
 
-The plugin registers triggers on the tables managed by the indexer. During
-non-finalized block processing, each insert, update, or delete records a rollback
-entry in the same database transaction. The triggers are created as
-`CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED`, so they fire when the
-transaction commits. They are registered once, on the first non-finalized block,
-and persist across transactions; only the transaction-local
-`airfoil.reorg_order_key` setting (the block's cursor) changes per block.
+The plugin registers a deferred trigger on each table managed by the indexer,
+once, on the first non-finalized block. While processing a non-finalized block,
+every insert, update, or delete records a rollback entry tagged with the block's
+cursor in the same database transaction.
 
 The audit table is pruned on every `message:finalize`: rows with `cursor` less
 than or equal to the finalized cursor are deleted.
@@ -88,13 +85,13 @@ When a chain reorganization is detected, all operations in the audit table where
 - `op = U` (UPDATE): the row with id `row_id` has its non-ID fields restored from
   `row_value`. The configured ID must remain immutable.
 
-These operations are subject to the plugin's
-[rollback limitations](/docs/drizzle-pg#current-sdk-rollback-limitations).
+These operations are subject to the
+[rollback requirements](/docs/drizzle-pg#schema-configuration) on ids and
+large integer values.
 
 ## State persistence
 
 The state of the indexer is persisted in the database, in the `airfoil.checkpoints` and `airfoil.filters` tables.
-The `airfoil` schema also contains the `reorg_rollback` audit table described above, whose primary key is `n` and which has an index on `(indexer_id, cursor)`.
 
 The checkpoints table contains the last indexed block for each indexer.
 
@@ -123,11 +120,8 @@ The filters table is used to manage the dynamic filter of factory indexers. It c
 
 The primary key of the filters table is `(id, from_block)`.
 
-Two more tables live in the `airfoil` schema. The `schema_version` table has
-columns `k` (integer, primary key) and `version` (integer) and tracks the
-version of the plugin's internal tables. The `chain_reorganizations` table is
-only written to when `recordChainReorganizations: true`, and records one row per
-chain reorganization.
+When `recordChainReorganizations` is `true`, the plugin also records one row per
+chain reorganization in the `airfoil.chain_reorganizations` table.
 
 ```txt
 +---------------------+--------------+-----------------------+

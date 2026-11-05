@@ -70,16 +70,14 @@ Whether to persist the indexer's state. Defaults to `true`.
 
 **indexerName: string**
 
-The name of the indexer. Defaults to `"default"`. The persisted indexer id is
-`indexer_<file name>_<indexerName>`, built from the indexer's file name and this
-value. Keep it stable for a given set of tables: it is also used as the suffix
-of the reorg trigger names, so changing it leaves stale triggers from previous
-runs in place.
+The name of the indexer. Defaults to `"default"`. Keep it stable: it is part of
+the persisted indexer id and of the reorg trigger names, so changing it leaves
+stale triggers from previous runs in place.
 
 **schema: TSchema**
 
-The extracted relational schema, defaulting to `db._.schema`. Normally, specify
-your tables with `drizzle({ schema })` and leave this option unset.
+The schema containing the tables to protect. Defaults to the schema passed to
+`drizzle({ schema })`, so normally leave this option unset.
 
 **idColumn: string | Partial<IdColumnMap>**
 
