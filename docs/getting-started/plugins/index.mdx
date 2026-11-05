@@ -174,9 +174,7 @@ function run(indexer) {
 
     switch (message._tag) {
       case "data": {
-        // `data` contains one entry per filter, `null` when the filter did not match.
-        const { endCursor, finality, data } = message.data;
-        const [block] = data;
+        const { endCursor } = message.data;
         middleware(() => {
           if (indexer.isFactoryMode()) {
             // Handle the factory portion of the indexer data.
@@ -188,7 +186,8 @@ function run(indexer) {
             stream = indexer.streamData(request, options);
           }
   
-          indexer.transform({ block, endCursor, finality });
+          // Transform only if a main block matched; data selection is omitted here.
+          indexer.transform(/* main block and handler arguments */);
         });
         break;
       }
