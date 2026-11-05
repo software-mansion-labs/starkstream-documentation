@@ -17,26 +17,25 @@ You can add an indexer that uses Drizzle for storage by selecting "PostgreSQL"
 in the "Storage" section when creating an indexer.
 
 The CLI automatically updates your `package.json` to add all necessary dependencies.
-Run `npm install @apibara/plugin-drizzle@latest` to use the latest stable plugin.
 
 ### Manually
 
 To use Drizzle with PostgreSQL, you need to install the following dependencies:
 
 ```bash [Terminal]
-npm install drizzle-orm pg @apibara/plugin-drizzle@latest
+pnpm add drizzle-orm pg @apibara/plugin-drizzle@latest
 ```
 
 We recommend using Drizzle Kit to manage the database schema.
 
 ```bash [Terminal]
-npm install --save-dev drizzle-kit
+pnpm add --save-dev drizzle-kit
 ```
 
 Additionally, if you want to use PGLite to run a Postgres compatible database without a full Postgres installation, you should install that package too.
 
 ```bash [Terminal]
-npm install @electric-sql/pglite
+pnpm add @electric-sql/pglite
 ```
 
 ## Persisting the indexer's state
@@ -55,7 +54,7 @@ Add the `drizzleStorage` plugin to your indexer's `plugins`. Notice the followin
   by specifying the `memory://` connection string.
 - Always specify the database schema. This schema is used by the indexer to know which tables
   it needs to protect against chain reorganizations.
-- By default, the connection string is read from the `POSTGRES_CONNECTION_STRING` environment variable. If it is unset, an in-memory PGlite database will be created. An explicitly empty string does not select PGlite: omit the variable or set the connection string to `memory://` for local development.
+- By default, the connection string is read from the `POSTGRES_CONNECTION_STRING` environment variable. If it is unset (not empty), an in-memory PGlite database will be created, so you don't need to start Postgres on your machine to develop locally.
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
@@ -87,9 +86,8 @@ export default defineIndexer(StarknetStream)({
 You can use the `pgTable` function from `drizzle-orm/pg-core` to define the schema,
 no changes required.
 
-Your table **must have an `id` column (name configurable)** with a unique,
-non-null, non-empty value for each row. Keep this identifier immutable for
-rollback support.
+The only important thing to notice is that your table **must have an `id` column (name configurable)**
+that uniquely identifies each row. This requirement is necessary to handle chain reorganizations.
 Read more how the plugin handles chain reorganizations [on the internals page](/docs/drizzle-pg/internals).
 
 ```ts [lib/schema.ts]
@@ -102,9 +100,11 @@ export const transfers = pgTable("transfers", {
 });
 ```
 
-Store exact amounts as decimal strings using `rawAmount.toString()` on a `bigint`,
-without converting through `number`. This preserves token amounts and avoids
-numeric rollback precision loss.
+**Rollback requirements:** the id must be non-null, immutable, and free of
+single quotes. Store large integers such as token amounts as text
+(`amount.toString()`): rollback restores previous row values through JSON, which
+rounds `bigint` and `numeric` values above 2^53. Indexers that can wait for
+finality can set `finality: "finalized"` to avoid rollback entirely.
 
 ## Specifying the id column
 
@@ -154,9 +154,7 @@ export default defineIndexer(StarknetStream)({
 ## Writing and reading data from within the indexer
 
 Use the `useDrizzleStorage` hook to access the current database transaction.
-It returns a regular Drizzle ORM transaction. The query API is available, but
-the current plugin's rollback limitations below apply when processing data that
-has not been finalized.
+It is a regular Drizzle ORM transaction, so the full Drizzle ORM API is available.
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
@@ -173,19 +171,7 @@ export default defineIndexer(StarknetStream)({
 });
 ```
 
-You can also update and delete rows, subject to the following rollback limits.
-
-### Current SDK rollback limitations
-
-In `@apibara/plugin-drizzle` 2.1.3, rollback can fail on single quotes in IDs or
-saved text. When a deleted or updated row is restored, integer values above
-2^53 in `bigint` or `numeric` columns can be rounded, because the previous row
-is stored as JSON, parsed into JavaScript numbers, and re-serialized on
-rollback; rolling back inserts is unaffected. Use immutable, non-empty IDs and
-store exact amounts as text.
-
-New indexers that can wait for finality can use `finality: "finalized"` to avoid
-rollback. This does not repair existing data or rollback history.
+You are not limited to inserting data, you can also update and delete rows.
 
 ### Drizzle query
 

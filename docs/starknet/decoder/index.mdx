@@ -46,11 +46,9 @@ export const myAbi = [
 ] as const satisfies Abi;
 ```
 
-The `OwnerChanged` variant above refers to a struct event. In
-`@apibara/starknet` 2.1.4, a `nested` variant whose payload is
-another enum is not decoded: `strict: false` returns `null`, and `strict: true`
-throws. The enum-to-struct Bookstore example below is supported. Do not change a
-deployed contract's ABI from nested to flat to work around this limitation.
+The `OwnerChanged` variant above refers to a struct event. A `nested` variant
+whose payload is another enum is not decoded in `@apibara/starknet` 2.1.4:
+`strict: false` returns `null`, and `strict: true` throws.
 
 ## Usage
 
@@ -151,11 +149,9 @@ switch (args._tag) {
  - `eventName`: the name of the event to decode, as defined in the ABI.
  - `strict`: if `true`, the decoder will throw an error if the event is not found in the ABI. If `false`, the decoder will return `null` if the event is not found.
 
-**SDK limitation:** In `@apibara/starknet` 2.1.4, decoding a
-struct event with an empty `event.keys` array can throw a `TypeError` even with
-`strict: false`. Reject empty-key events before decoding a selector-based struct
-event. The enum event used in the example above handles empty keys by returning
-`null` when `strict` is `false`.
+**SDK limitation:** in `@apibara/starknet` 2.1.4, decoding a struct event whose
+`event.keys` array is empty throws a `TypeError` even with `strict: false`, so
+skip empty-key events before decoding.
 
 **Returns**
 

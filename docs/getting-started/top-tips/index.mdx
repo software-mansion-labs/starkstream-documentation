@@ -70,15 +70,13 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
 
 **💡 Best practices:**
 
-- Pass the hook's `abortSignal` to `watch` so cancellation of the active run can close it.
-- In `@apibara/indexer` 2.1.3, programmatic reload and normal stream completion do not abort the per-run signal. Retain the watcher handle and close it before requesting a reload and before setting up its replacement, as above. The `run:after` hook handles normal completion but is skipped on reload, so it cannot be the only cleanup path.
-- If you run an indexer outside the CLI, close application-owned resources in your runner's `finally` block when a run fails. Process termination releases operating-system handles; it does not guarantee that JavaScript cleanup callbacks execute.
+- Pass the hook's `abortSignal` to `watch` so cancellation of the active run closes it.
+- Reload and normal stream completion do not abort the signal, and `run:after` is skipped on reload, so keep the watcher handle and close it yourself before reloading, as above.
 
 ### Reloading the indexer
 
 You can programmatically reload your indexer using the `reloadIndexer()` function.
-The example below requests one reload per process. Its module-level flag survives
-factory calls during reload and resets when a new process starts.
+The example below requests one reload per process.
 
 Without a storage plugin, the new run starts again from `startingBlock`. Guard a
 block-based reload condition so replaying that block does not cause an endless

@@ -2,7 +2,7 @@
 title: Testing
 description: "Learn how to test your indexer's when using the Drizzle plugin."
 diataxis: how-to
-updatedAt: 2026-11-04
+updatedAt: 2026-11-05
 ---
 
 # Testing
@@ -66,14 +66,12 @@ If you need to initialize data in the database, you can add a hook to `run:befor
 The following example shows the structure of an end-to-end test. Fill in the
 transform and initial row values for your schema.
 
-On the first run, VCR records the requested block range from the stream. The
-client reads `DNA_TOKEN` and only warns when it is unset, but the hosted
-Starkstream endpoints require it, so set it for the recording run. Subsequent
-runs replay the cassette locally. Keep the
-generated `cassettes` and snapshots with your tests; VCR cannot record in CI.
+On the first run, VCR records the requested block range from the stream, so set
+`DNA_TOKEN` for that run. Subsequent runs replay the cassette locally. Recording
+is refused in CI, so commit the generated `cassettes` and snapshots with your tests.
 
-If direct ESM tests fail with `require is not defined`, apply the
-[current package workaround](/docs/drizzle-pg/faq#referenceerror-require-is-not-defined-in-tests).
+If the test fails with `require is not defined`, apply the
+[workaround in the FAQ](/docs/drizzle-pg/faq#referenceerror-require-is-not-defined-in-tests).
 
  - Pass a custom runtime configuration to the indexer's constructor.
  - Initialize the database before running the indexer.

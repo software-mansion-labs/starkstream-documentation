@@ -273,10 +273,9 @@ const filter: Filter = { transactions: [{ transactionStatus: "all" }] };
 
 - Request all transactions of a specific type, e.g. deploy account. In this case we specify the `deployAccountV3` variant.
 
-**SDK limitation:** `@apibara/starknet` 2.1.4 currently omits
-`transactionType` when serializing the request. The example below describes the
-intended API, but this release receives other transaction types too. Check
-`transaction.transaction._tag` in your transform until the SDK is fixed.
+**SDK limitation:** `@apibara/starknet` 2.1.4 drops `transactionType` when
+serializing the request, so this filter currently returns all transaction types.
+Check `transaction.transaction._tag` in your transform instead.
 
 ```ts
 const filter: Filter = {

@@ -40,16 +40,15 @@ pnpm dlx apibara@latest init . --language="ts" --no-create-indexer
 
 :::
 
-Install the latest stable SDK dependencies:
+The generated `package.json` pins the SDK versions that were current when the
+CLI was released. Install the latest stable release instead:
 
 ```bash [Terminal]
 pnpm add apibara@latest @apibara/protocol@latest
 ```
 
-If pnpm reports `ERR_PNPM_IGNORED_BUILDS` for `esbuild` or `protobufjs`, run
-`pnpm approve-builds esbuild protobufjs` to approve those dependencies' build
-scripts, then rerun `pnpm install`. The approvals are saved in
-`pnpm-workspace.yaml`; keep this file with your project.
+If pnpm reports `ERR_PNPM_IGNORED_BUILDS`, run `pnpm approve-builds` to allow
+the listed build scripts and install again.
 
 ## Project configuration
 
@@ -247,16 +246,6 @@ Once the indexers are built, you can run them in two ways:
 - The `apibara start` command by specifying which indexer to run with the
   `--indexer` flag. In this tutorial we are going to use this method.
 - Running `.apibara/build/start.mjs` with Node. This is useful when building Docker images for your indexers.
-
-**Instrumentation note:** `apibara start` runs the same built bundle
-(`.apibara/build/start.mjs`). In our testing, telemetry from `instrumentation.ts`
-was only picked up when the indexer was launched through `pnpm run start`, whose
-bin shim exports `NODE_PATH` pointing at `node_modules/.pnpm/node_modules`;
-running `node .apibara/build/start.mjs` directly skipped it. The instrumentation
-loader swallows load errors silently, so the only sign of failure is a missing
-`Registering from instrumentation` log line at startup. For instrumented
-indexers, use `pnpm run start` as shown below, or set `NODE_PATH` yourself, and
-confirm that the log line appears before relying on a standalone deployment.
 
 :::cli-command
 

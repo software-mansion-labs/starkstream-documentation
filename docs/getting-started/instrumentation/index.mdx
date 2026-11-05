@@ -14,19 +14,11 @@ It's easy to add observability to your indexer using our native instrumentation 
 To add instrumentation to your project, create a `instrumentation.ts` file at the root (next to `apibara.config.ts`).
 
 This file should export a `register` function. The runtime calls it before each
-production indexer run, including a run started by `reloadIndexer()`. Keep
-process-wide telemetry initialization idempotent so a reload does not register
-duplicate OpenTelemetry providers or bind a second Prometheus exporter to the
-same port. The examples below retain an initialization flag at module scope.
+production indexer run, including runs restarted by `reloadIndexer()`, so keep
+process-wide setup idempotent as the flag below does.
 
-For instrumented indexers, start with `pnpm run start` and confirm that the
-`Registering from instrumentation` line appears in the logs. The instrumentation
-loader swallows load errors silently, so a missing line is the only sign that
-`register` was not picked up. In our testing, running
-`node .apibara/build/start.mjs` directly skipped instrumentation under pnpm's
-isolated layout, while pnpm's bin shim setting `NODE_PATH` worked around it. See
-the [standalone startup note](/docs/getting-started/installation#production-build)
-before deploying the built entry directly with Node.
+Errors while loading `instrumentation.ts` are ignored, so confirm that the
+`Registering from instrumentation` line appears in the logs at startup.
 
 ```ts [instrumentation.ts]
 import type { RegisterFn } from "apibara/types";
@@ -92,11 +84,7 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import type { RegisterFn } from "apibara/types";
 
-let initialized = false;
-
 export const register: RegisterFn = async () => {
-  if (initialized) return;
-
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
@@ -130,7 +118,6 @@ export const register: RegisterFn = async () => {
 
   // Start the SDK
   sdk.start();
-  initialized = true;
 };
 ```
 
@@ -185,11 +172,7 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import type { RegisterFn } from "apibara/types";
 
-let initialized = false;
-
 export const register: RegisterFn = async () => {
-  if (initialized) return;
-
   // Create a resource that identifies your service
   const resource = defaultResource().merge(
     resourceFromAttributes({
@@ -209,7 +192,6 @@ export const register: RegisterFn = async () => {
   });
 
   sdk.start();
-  initialized = true;
 };
 ```
 
@@ -238,16 +220,11 @@ Update the `instrumentation.ts` file at the root of your project:
 import * as Sentry from "@sentry/node";
 import type { RegisterFn } from "apibara/types";
 
-let initialized = false;
-
 export const register: RegisterFn = async () => {
-  if (initialized) return;
-
   Sentry.init({
     dsn: "__YOUR_DSN__",
     tracesSampleRate: 1.0,
   });
-  initialized = true;
 };
 ```
 
