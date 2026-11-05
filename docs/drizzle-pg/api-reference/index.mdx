@@ -39,6 +39,14 @@ The database driver to use. Defaults to `"pglite"`. It also selects the inferred
 The connection string. By default, the helper uses the value of the `POSTGRES_CONNECTION_STRING` environment variable, falling back to `memory://` when it is unset.
 If `type` is `"pglite"` and the connection string starts with `memory://`, `file://`, or `idb://`, the indexer will run with a PgLite database (in-memory for `memory://`). Any other connection string uses node-postgres.
 
+**poolConfig: pg.PoolConfig**
+
+Additional pool options passed to the node-postgres `Pool`. Not supported with PgLite.
+
+**config: DrizzleConfig**
+
+Additional Drizzle configuration options, except `schema`. With PgLite, it can also include a `connection` entry with PgLite-specific options.
+
 ## drizzleStorage
 
 This function is used to create the Drizzle's plugin. This is how you configure its behaviour.
@@ -70,13 +78,16 @@ Whether to persist the indexer's state. Defaults to `true`.
 
 **indexerName: string**
 
-The name of the indexer. The default is the filename of the indexer.
+The name of the indexer. Defaults to `"default"`. Keep it stable: it is part of
+the persisted indexer id and of the reorg trigger names, so changing it leaves
+stale triggers from previous runs in place.
 
 **schema: TSchema**
 
-The Drizzle schema containing the tables used by indexers.
+The schema containing the tables to protect. Defaults to the schema passed to
+`drizzle({ schema })`, so normally leave this option unset.
 
-**idColumn: string | IdColumnMap**
+**`idColumn: string | Partial<IdColumnMap>`**
 
 The column to use as the row id. Defaults to `id`.
 
@@ -92,7 +103,7 @@ drizzleStorage({
 })
 ```
 
-**migrate: MigrateConfig**
+**migrate: MigrateOptions**
 
 The options for the database migration. When provided, the database will automatically run migrations before the indexer runs.
 

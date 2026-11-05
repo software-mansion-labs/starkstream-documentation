@@ -2,7 +2,7 @@
 title: DNA v2 architecture
 description: "Discover how DNA achieves best-in-class performance for indexing onchain data."
 diataxis: explanation
-updatedAt: 2026-10-07
+updatedAt: 2026-11-05
 ---
 
 # DNA v2 architecture
@@ -96,7 +96,7 @@ to identify them. There are four different types of fragments:
 
 - index: a collection of indices, the fragment id is `0`.
   Indices are grouped by the fragment they index.
-- join: a collection of join indices, the fragment id is `254`.
+- join: a collection of join indices, the fragment id is `255`.
   Join indices are also grouped by the source fragment index.
 - header: the block header, the fragment id is `1`. Header are stored as
   pre-serialized protobuf messages.
@@ -145,15 +145,15 @@ block in the chain.
  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-On Starknet, the ingestion service is also responsible for
-periodically refreshing the mempool (pending) block data and uploading it into
-Object Storage. This works exactly as for all other blocks.
+On Starknet, the ingestion service can also refresh pre-confirmed (pending)
+block data and upload it into Object Storage. Enable this with
+`--starknet.ingest-pre-confirmed`; it is disabled by default.
 
 The ingestion service tracks the canonical chain and uploads it to Object Storage.
 This data is used by the stream service to track online and offline chain
 reorganizations.
 
-The ingestion service stores its data on etcd. Stream services subscribe to
+The ingestion service stores its coordination state in etcd. Stream services subscribe to
 etcd updates to receive notifications about new blocks ingested and other
 changes to the chain (for example changes to the finalized block).
 
@@ -223,37 +223,51 @@ that looks like the following.
 
 ```txt
 my-chain
-├── blocks
-│   ├── 000020908017
-│   │   └── 0xc137607affd53bd9e857af372429762f77eaff0fe32f0e49224e9fc0e439118d
-│   │   ├── pending-0
-│   │   ├── pending-1
-│   │   └── pending-2
-│   ├── 000020908018
-│   │   └── ... same as above
-│   └── 000020908019
-│       └── ... same as above
-├── chain
-│   ├── recent
-│   ├── z-000020906000
-│   ├── z-000020907000
-│   └── z-000020908000
-├── groups
-│   └── 000020905000
-│       └── index
-└── segments
-    ├── 000020906000
-    │   ├── header
-    │   ├── index
-    │   ├── join
-    │   ├── log
-    │   ├── receipt
-    │   └── transaction
-    ├── 000020907000
-    │   └── ... same as above
-    └── 000020908000
+├── block
+│   ├── 0020908017
+│   │   ├── 0xc137607affd53bd9e857af372429762f77eaff0fe32f0e49224e9fc0e439118d
+│   │   ├── pending-0001
+│   │   ├── pending-0002
+│   │   └── pending-0003
+│   ├── 0020908018
+│   │   └── ... same as above
+│   └── 0020908019
+│       └── ... same as above
+├── canon
+│   ├── recent
+│   │   └── ... snapshots of the recent canonical chain
+│   ├── z-0020906000
+│   ├── z-0020907000
+│   └── z-0020908000
+├── group
+│   └── 0020905000
+│       └── index
+└── segment
+    ├── 0020906000
+    │   ├── header
+    │   ├── index
+    │   ├── join
+    │   ├── transaction
+    │   ├── receipt
+    │   ├── event
+    │   ├── message
+    │   ├── storage_diff
+    │   ├── contract_change
+    │   ├── nonce_update
+    │   └── trace
+    ├── 0020907000
+    │   └── ... same as above
+    └── 0020908000
         └── ... same as above
 ```
+
+Block numbers are zero-padded to 10 digits. Under `block/`, each block is stored
+by hash, while pre-confirmed data is stored as `pending-NNNN`, where `NNNN` is
+the generation of the pending block. Under `canon/`, `z-<first block>` objects
+hold older parts of the canonical chain and `canon/recent/` holds snapshots of
+the recent part. Each segment directory contains the `header`, `index`,
+and `join` fragments plus one file per body fragment. The `trace` fragment is
+empty unless the server runs with `--starknet.ingest-traces`.
 
 ### Stream service
 
