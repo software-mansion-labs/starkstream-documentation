@@ -11,8 +11,8 @@ updatedAt: 2026-11-05
 ### ReferenceError: require is not defined in tests
 
 The ESM build of `@apibara/plugin-drizzle` calls `require()` internally, so
-importing it directly as ESM, for example from Vitest tests, fails with this
-error. Indexers built by the CLI are unaffected.
+calling its `drizzle()` or `migrate()` helpers directly from ESM, for example
+in Vitest tests, fails with this error. Indexers built by the CLI are unaffected.
 
 Until the package is fixed, provide `require` before the indexer module is
 imported, using a Vitest setup file:

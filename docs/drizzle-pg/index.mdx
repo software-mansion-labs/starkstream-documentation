@@ -101,7 +101,9 @@ export const transfers = pgTable("transfers", {
 ```
 
 **Rollback requirements:** the id must be non-null, immutable, and free of
-single quotes. Store large integers such as token amounts as text
+single quotes. In `@apibara/plugin-drizzle` 2.1.3, update/delete rollback also
+fails if previous row values contain single quotes. Store large integers such as
+token amounts as text
 (`amount.toString()`): rollback restores previous row values through JSON, which
 rounds `bigint` and `numeric` values above 2^53. Indexers that can wait for
 finality can set `finality: "finalized"` to avoid rollback entirely.
