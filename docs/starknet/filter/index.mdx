@@ -2,7 +2,7 @@
 title: Starknet filter reference
 description: "Starknet: DNA data filter reference guide."
 diataxis: reference
-updatedAt: 2026-10-30
+updatedAt: 2026-11-05
 ---
 
 # Starknet filter reference
@@ -46,6 +46,11 @@ export type Filter = {
   nonceUpdates?: NonceUpdateFilter[];
 };
 ```
+
+The `includeTransactionTrace` (events and messages) and `includeTrace`
+(transactions) options below require the server to ingest traces
+(`--starknet.ingest-traces`). When traces are not ingested, these options have
+no effect.
 
 ### Header
 
@@ -336,8 +341,6 @@ export type MessageToL1Filter = {
 - `includeEvents`: also return the events emitted by the transaction that sent
   the message.
 - `includeTransactionTrace`: also return the transaction trace, when available.
-
-Trace inclusion requires the server to ingest traces (`--starknet.ingest-traces`).
 
 ### Storage diff
 

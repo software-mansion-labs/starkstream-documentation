@@ -2,7 +2,7 @@
 title: DNA v2 architecture
 description: "Discover how DNA achieves best-in-class performance for indexing onchain data."
 diataxis: explanation
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # DNA v2 architecture
@@ -225,37 +225,56 @@ that looks like the following.
 
 ```txt
 my-chain
-├── blocks
-│   ├── 000020908017
-│   │   └── 0xc137607affd53bd9e857af372429762f77eaff0fe32f0e49224e9fc0e439118d
-│   │   ├── pending-0
-│   │   ├── pending-1
-│   │   └── pending-2
-│   ├── 000020908018
-│   │   └── ... same as above
-│   └── 000020908019
-│       └── ... same as above
-├── chain
-│   ├── recent
-│   ├── z-000020906000
-│   ├── z-000020907000
-│   └── z-000020908000
-├── groups
-│   └── 000020905000
-│       └── index
-└── segments
-    ├── 000020906000
-    │   ├── header
-    │   ├── index
-    │   ├── join
-    │   ├── event
-    │   ├── receipt
-    │   └── transaction
-    ├── 000020907000
-    │   └── ... same as above
-    └── 000020908000
+├── block
+│   ├── 0020908017
+│   │   ├── 0xc137607affd53bd9e857af372429762f77eaff0fe32f0e49224e9fc0e439118d
+│   │   ├── pending-0001
+│   │   ├── pending-0002
+│   │   └── pending-0003
+│   ├── 0020908018
+│   │   └── ... same as above
+│   └── 0020908019
+│       └── ... same as above
+├── canon
+│   ├── recent
+│   │   └── z-0020908000-0020908019-01762300000000000000-000001
+│   ├── z-0020906000
+│   ├── z-0020907000
+│   └── z-0020908000
+├── group
+│   └── 0020905000
+│       └── index
+└── segment
+    ├── 0020906000
+    │   ├── header
+    │   ├── index
+    │   ├── join
+    │   ├── transaction
+    │   ├── receipt
+    │   ├── event
+    │   ├── message
+    │   ├── storage_diff
+    │   ├── contract_change
+    │   ├── nonce_update
+    │   └── trace
+    ├── 0020907000
+    │   └── ... same as above
+    └── 0020908000
         └── ... same as above
 ```
+
+Block numbers are zero-padded to 10 digits. Under `block/`, each block is stored
+by hash, while pre-confirmed data is stored as `pending-NNNN` where `NNNN` is the
+zero-padded generation of the pending block. The canonical chain lives under
+`canon/`: `z-<first block>` objects are older chain segments, uploaded once they are well behind the head, and the
+recent (non-finalized) part of the chain is written as immutable snapshots under
+`canon/recent/`, with the current snapshot referenced by a pointer in etcd. A
+single mutable `canon/recent` object is the legacy layout and is deleted after
+migrating to the pointer-based one. A segment directory contains the `header`,
+`index`, and `join` fragments plus one file per body fragment; for Starknet these
+are `transaction`, `receipt`, `event`, `message`, `storage_diff`,
+`contract_change`, `nonce_update`, and `trace`. The `trace` fragment only
+contains data when the server runs with `--starknet.ingest-traces`.
 
 ### Stream service
 

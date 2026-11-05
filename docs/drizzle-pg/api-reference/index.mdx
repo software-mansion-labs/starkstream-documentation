@@ -70,14 +70,18 @@ Whether to persist the indexer's state. Defaults to `true`.
 
 **indexerName: string**
 
-The name of the indexer. The default is the filename of the indexer.
+The name of the indexer. Defaults to `"default"`. The persisted indexer id is
+`indexer_<file name>_<indexerName>`, built from the indexer's file name and this
+value. Keep it stable for a given set of tables: it is also used as the suffix
+of the reorg trigger names, so changing it leaves stale triggers from previous
+runs in place.
 
 **schema: TSchema**
 
 The extracted relational schema, defaulting to `db._.schema`. Normally, specify
 your tables with `drizzle({ schema })` and leave this option unset.
 
-**idColumn: string | IdColumnMap**
+**idColumn: string | Partial<IdColumnMap>**
 
 The column to use as the row id. Defaults to `id`.
 
@@ -93,7 +97,7 @@ drizzleStorage({
 })
 ```
 
-**migrate: MigrateConfig**
+**migrate: MigrateOptions**
 
 The options for the database migration. When provided, the database will automatically run migrations before the indexer runs.
 
