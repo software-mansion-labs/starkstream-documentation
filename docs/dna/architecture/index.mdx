@@ -76,10 +76,9 @@ The DNA service is comprised of several components:
 
 ### Ingestion service
 
-The ingestion service fetches blocks from Starknet and stores them in Object
-Storage. The Starknet implementation translates provider responses into indexed
-fragments. Shared infrastructure handles ingestion, storage, compaction, and
-streaming.
+The ingestion service fetches blocks from Starknet and stores them into
+Object Storage. This service is the only chain-specific service in DNA, all
+other components work on generic data-structures.
 
 Serving onchain data requires serving a high-volume of data filtered by a
 relatively small number of columns. When designing DNA, we took a few decisions
@@ -154,8 +153,7 @@ The ingestion service tracks the canonical chain and uploads it to Object Storag
 This data is used by the stream service to track online and offline chain
 reorganizations.
 
-The ingestion service stores coordination state and mutable pointers in etcd;
-bulk block data remains in Object Storage. Stream services subscribe to
+The ingestion service stores its coordination state in etcd. Stream services subscribe to
 etcd updates to receive notifications about new blocks ingested and other
 changes to the chain (for example changes to the finalized block).
 
@@ -237,7 +235,7 @@ my-chain
 │       └── ... same as above
 ├── canon
 │   ├── recent
-│   │   └── z-0020908000-0020908019-01762300000000000000-000001
+│   │   └── ... snapshots of the non-finalized chain
 │   ├── z-0020906000
 │   ├── z-0020907000
 │   └── z-0020908000
@@ -264,17 +262,12 @@ my-chain
 ```
 
 Block numbers are zero-padded to 10 digits. Under `block/`, each block is stored
-by hash, while pre-confirmed data is stored as `pending-NNNN` where `NNNN` is the
-zero-padded generation of the pending block. The canonical chain lives under
-`canon/`: `z-<first block>` objects are older chain segments, uploaded once they are well behind the head, and the
-recent (non-finalized) part of the chain is written as immutable snapshots under
-`canon/recent/`, with the current snapshot referenced by a pointer in etcd. A
-single mutable `canon/recent` object is the legacy layout and is deleted after
-migrating to the pointer-based one. A segment directory contains the `header`,
-`index`, and `join` fragments plus one file per body fragment; for Starknet these
-are `transaction`, `receipt`, `event`, `message`, `storage_diff`,
-`contract_change`, `nonce_update`, and `trace`. The `trace` fragment only
-contains data when the server runs with `--starknet.ingest-traces`.
+by hash, while pre-confirmed data is stored as `pending-NNNN`, where `NNNN` is
+the generation of the pending block. Under `canon/`, `z-<first block>` objects
+hold older parts of the canonical chain and `canon/recent/` holds snapshots of
+the non-finalized part. Each segment directory contains the `header`, `index`,
+and `join` fragments plus one file per body fragment. The `trace` fragment is
+empty unless the server runs with `--starknet.ingest-traces`.
 
 ### Stream service
 

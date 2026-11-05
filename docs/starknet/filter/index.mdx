@@ -102,7 +102,7 @@ export type EventFilter = {
   emitted the event.
 - `includeSiblings`: also return all other events emitted by the same transaction
   that emitted the matched event.
-- `includeTransactionTrace`: also return the transaction trace, when available.
+- `includeTransactionTrace`: also return the transaction trace.
 
 **Examples**
 
@@ -277,7 +277,7 @@ export type TransactionFilter = {
 - `includeReceipt`: also return the receipt of the transaction.
 - `includeMessages`: also return the messages to L1 sent by the transaction.
 - `includeEvents`: also return the events emitted by the transaction.
-- `includeTrace`: also return the transaction trace, when the server has ingested it.
+- `includeTrace`: also return the transaction trace.
 - `transactionType`: filter by transaction type.
 
 **Examples**
@@ -340,7 +340,7 @@ export type MessageToL1Filter = {
   message.
 - `includeEvents`: also return the events emitted by the transaction that sent
   the message.
-- `includeTransactionTrace`: also return the transaction trace, when available.
+- `includeTransactionTrace`: also return the transaction trace.
 
 ### Storage diff
 
