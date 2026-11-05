@@ -2,7 +2,7 @@
 title: Drizzle's plugin internals
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2026-11-04
+updatedAt: 2026-11-05
 ---
 
 # Drizzle's plugin internals
@@ -35,6 +35,11 @@ indexer.hooks.hook("handler:middleware", async ({ use }) => {
 });
 ```
 
+`updateState` runs only when the block's finality is not `pending` and state
+persistence is enabled. When the previous block was pending, the plugin first
+runs `invalidate(cursor)` in a separate transaction, to drop the pending data,
+before opening the block's transaction.
+
 ## Chain reorganizations
 
 The indexer needs to be able to rollback state after a chain reorganization.
@@ -65,9 +70,14 @@ The data stored in the `row_value` column is specific to each operation (INSERT,
 
 The plugin registers triggers on the tables managed by the indexer. During
 non-finalized block processing, each insert, update, or delete records a rollback
-entry in the same database transaction.
+entry in the same database transaction. The triggers are created as
+`CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED`, so they fire when the
+transaction commits. They are registered once, on the first non-finalized block,
+and persist across transactions; only the transaction-local
+`airfoil.reorg_order_key` setting (the block's cursor) changes per block.
 
-The audit table is periodically pruned to remove snapshots of data that is now finalized.
+The audit table is pruned on every `message:finalize`: rows with `cursor` less
+than or equal to the finalized cursor are deleted.
 
 ### Reverting a block
 
@@ -84,6 +94,7 @@ These operations are subject to the plugin's
 ## State persistence
 
 The state of the indexer is persisted in the database, in the `airfoil.checkpoints` and `airfoil.filters` tables.
+The `airfoil` schema also contains the `reorg_rollback` audit table described above, whose primary key is `n` and which has an index on `(indexer_id, cursor)`.
 
 The checkpoints table contains the last indexed block for each indexer.
 
@@ -108,4 +119,26 @@ The filters table is used to manage the dynamic filter of factory indexers. It c
 | from_block | bigint       |  not null             |
 | to_block   | bigint       |  default null         |
 +------------+--------------+-----------------------+
+```
+
+The primary key of the filters table is `(id, from_block)`.
+
+Two more tables live in the `airfoil` schema. The `schema_version` table has
+columns `k` (integer, primary key) and `version` (integer) and tracks the
+version of the plugin's internal tables. The `chain_reorganizations` table is
+only written to when `recordChainReorganizations: true`, and records one row per
+chain reorganization.
+
+```txt
++---------------------+--------------+-----------------------+
+| Column              | Type         | Modifiers             |
+|---------------------+--------------+-----------------------|
+| id                  | serial       |  primary key          |
+| indexer_id          | text         |  not null             |
+| old_head_order_key  | bigint       |                       |
+| old_head_unique_key | text         |  default null         |
+| new_head_order_key  | bigint       |  not null             |
+| new_head_unique_key | text         |  default null         |
+| recorded_at         | timestamp    |  not null default now |
++---------------------+--------------+-----------------------+
 ```

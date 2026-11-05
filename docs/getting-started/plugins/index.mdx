@@ -2,7 +2,7 @@
 title: Plugins & Hooks
 description: "Learn how to use plugins to extend the functionality of your indexers."
 diataxis: explanation
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # Plugins & Hooks
@@ -18,7 +18,7 @@ The following hooks are available in all indexers.
  - **`run:before`**<span class="arg-type">`({ abortSignal?: AbortSignal }) => void`</span><br/>
    <span class="arg-description">Called before the indexer starts running.</span>
  - **`run:after`**<span class="arg-type">`({ abortSignal?: AbortSignal }) => void`</span><br/>
-   <span class="arg-description">Called after the stream finishes normally. This hook is not guaranteed to run when a handler throws; use `try`/`finally` for cleanup around operations that can fail.</span>
+   <span class="arg-description">Called after the stream finishes or is aborted via the abort signal; not called when a hook or handler throws. Use `try`/`finally` for cleanup around operations that can fail.</span>
  - **`connect:before`**<span class="arg-type">`({ request: StreamDataRequest<TFilter>, options: StreamDataOptions, abortSignal?: AbortSignal }) => void`</span><br/>
    <span class="arg-description">Called before the indexer connects to the DNA stream. Can be used to change the request or stream options.</span>
  - **`connect:after`**<span class="arg-type">`({ request: StreamDataRequest<TFilter>, abortSignal?: AbortSignal }) => void`</span><br/>
@@ -176,7 +176,9 @@ function run(indexer) {
 
     switch (message._tag) {
       case "data": {
-        const { block, endCursor, finality } = message.data
+        // `data` contains one entry per filter, `null` when the filter did not match.
+        const { endCursor, finality, data } = message.data;
+        const [block] = data;
         middleware(() => {
           if (indexer.isFactoryMode()) {
             // Handle the factory portion of the indexer data.

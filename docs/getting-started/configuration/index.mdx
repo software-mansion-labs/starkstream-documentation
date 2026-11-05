@@ -2,7 +2,7 @@
 title: Configuration - apibara.config.ts
 description: "Learn how to configure your indexers using the apibara.config.ts file."
 diataxis: reference
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # apibara.config.ts
@@ -90,8 +90,30 @@ Shorthand for `rolldownConfig.resolve.exportConditions`.
 
 ## File watcher
 
-**`watchOptions: WatchOptions`**
+**`watchOptions: WatchOptions["watch"]`**
 
 Configure Rolldown's file watcher using options such as `exclude`. By default,
 the CLI excludes generated output, dependencies, Git files, and the
-`apibara.config` file, which has its own watcher.
+`apibara.config` file, which has its own watcher. Passing `exclude` overrides
+this default list rather than extending it, so re-include the defaults if you
+still want them.
+
+```ts [apibara.config.ts]
+import { defineConfig } from "apibara/config";
+
+export default defineConfig({
+  watchOptions: {
+    exclude: [
+      "**/.apibara/**",
+      "**/.git/**",
+      "**/.DS_Store",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.turbo/**",
+      "**/apibara.config?(.ts|.js|.mjs)",
+      // Add your own patterns here.
+      "**/generated/**",
+    ],
+  },
+});
+```

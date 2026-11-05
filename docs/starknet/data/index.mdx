@@ -2,7 +2,7 @@
 title: Starknet data reference
 description: "Starknet: DNA data data reference guide."
 diataxis: reference
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # Starknet data reference
@@ -41,8 +41,6 @@ export type FieldElement = `0x${string}`;
 The root object is the `Block`.
 
 ```ts
-import type { ExecutionResources, TransactionTrace } from "@apibara/starknet";
-
 export type Block = {
   header: BlockHeader;
   transactions: Transaction[];
@@ -520,7 +518,38 @@ export type FeePayment = {
   amount: FieldElement;
   unit: "wei" | "fri" | "unknown";
 };
+
+export type ExecutionResources = {
+  computation: ComputationResources;
+  dataAvailability: DataAvailabilityResources;
+};
+
+export type ComputationResources = {
+  steps: bigint;
+  memoryHoles?: bigint;
+  rangeCheckBuiltinApplications?: bigint;
+  pedersenBuiltinApplications?: bigint;
+  poseidonBuiltinApplications?: bigint;
+  ecOpBuiltinApplications?: bigint;
+  ecdsaBuiltinApplications?: bigint;
+  bitwiseBuiltinApplications?: bigint;
+  keccakBuiltinApplications?: bigint;
+  segmentArenaBuiltin?: bigint;
+};
+
+export type DataAvailabilityResources = {
+  l1Gas: bigint;
+  l1DataGas: bigint;
+};
 ```
+
+**Properties**
+
+- `meta.transactionIndex`: the index of the transaction in the block.
+- `meta.transactionHash`: the hash of the transaction.
+- `meta.actualFee`: the fee paid by the transaction, with its unit.
+- `meta.executionResources`: the computation and data availability resources used by the transaction.
+- `meta.executionResult`: whether the transaction succeeded or reverted, with the revert reason when available.
 
 **Relevant filters**
 
@@ -562,6 +591,116 @@ export type MessageToL1 = {
 - `filter.messages`
 - `filter.transactions[].includeMessages`
 - `filter.events[].includeMessages`
+
+### Transaction trace
+
+The trace of a transaction contains the function calls executed by the
+transaction. Like transactions, traces are grouped in the `TransactionTrace`
+type and the trace root depends on the transaction type.
+
+```ts
+export type TransactionTrace = {
+  filterIds: number[];
+  transactionIndex: number;
+  transactionHash: FieldElement;
+  traceRoot:
+    | InvokeTransactionTrace
+    | DeclareTransactionTrace
+    | DeployAccountTransactionTrace
+    | L1HandlerTransactionTrace;
+};
+
+export type InvokeTransactionTrace = {
+  _tag: "invoke";
+  invoke: {
+    validateInvocation?: FunctionInvocation;
+    executeInvocation: ExecuteInvocationSuccess | ExecuteInvocationReverted;
+    feeTransferInvocation?: FunctionInvocation;
+  };
+};
+
+export type ExecuteInvocationSuccess = {
+  _tag: "success";
+  success: FunctionInvocation;
+};
+
+export type ExecuteInvocationReverted = {
+  _tag: "reverted";
+  reverted: {
+    reason?: string;
+  };
+};
+
+export type DeclareTransactionTrace = {
+  _tag: "declare";
+  declare: {
+    validateInvocation?: FunctionInvocation;
+    feeTransferInvocation?: FunctionInvocation;
+  };
+};
+
+export type DeployAccountTransactionTrace = {
+  _tag: "deployAccount";
+  deployAccount: {
+    validateInvocation?: FunctionInvocation;
+    constructorInvocation?: FunctionInvocation;
+    feeTransferInvocation?: FunctionInvocation;
+  };
+};
+
+export type L1HandlerTransactionTrace = {
+  _tag: "l1Handler";
+  l1Handler: {
+    functionInvocation?: FunctionInvocation;
+  };
+};
+
+export type FunctionInvocation = {
+  contractAddress: FieldElement;
+  entryPointSelector: FieldElement;
+  calldata: FieldElement[];
+  callerAddress: FieldElement;
+  classHash: FieldElement;
+  callType: "libraryCall" | "call" | "delegate" | "unknown";
+  result: FieldElement[];
+  calls: FunctionInvocation[];
+  events: number[];
+  messages: number[];
+};
+```
+
+**Properties**
+
+- `transactionIndex`: the index of the traced transaction in the block.
+- `transactionHash`: the hash of the traced transaction.
+- `traceRoot`: the trace root, one variant per transaction type.
+
+- `validateInvocation`: the `__validate__` call.
+- `executeInvocation`: the `__execute__` call, either a successful invocation or the revert reason.
+- `feeTransferInvocation`: the fee transfer call.
+- `constructorInvocation`: the constructor call of the deployed account.
+- `functionInvocation`: the L1 handler function call.
+
+- `contractAddress`: the address of the called contract.
+- `entryPointSelector`: the selector of the called function.
+- `calldata`: the calldata of the call.
+- `callerAddress`: the address of the caller.
+- `classHash`: the class hash of the called contract.
+- `callType`: how the function was called.
+- `result`: the values returned by the call.
+- `calls`: the nested function invocations.
+- `events`: the indices, within the transaction, of the events emitted by the call.
+- `messages`: the indices, within the transaction, of the messages sent by the call.
+
+Traces are only available when the server ingests them
+(`--starknet.ingest-traces`). See the
+[Starknet filter reference](/docs/starknet/filter#transactions) for details.
+
+**Relevant filters**
+
+- `filter.transactions[].includeTrace`
+- `filter.events[].includeTransactionTrace`
+- `filter.messages[].includeTransactionTrace`
 
 ### Storage diff
 
