@@ -26,6 +26,7 @@ indexer.hooks.hook("handler:middleware", async ({ use }) => {
       context.db = txn;
 
       await next();
+
       delete context.db;
 
       // Update the indexer's state with cursor.
