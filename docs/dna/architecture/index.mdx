@@ -235,7 +235,7 @@ my-chain
 │       └── ... same as above
 ├── canon
 │   ├── recent
-│   │   └── ... snapshots of the non-finalized chain
+│   │   └── ... snapshots of the recent canonical chain
 │   ├── z-0020906000
 │   ├── z-0020907000
 │   └── z-0020908000
@@ -265,7 +265,7 @@ Block numbers are zero-padded to 10 digits. Under `block/`, each block is stored
 by hash, while pre-confirmed data is stored as `pending-NNNN`, where `NNNN` is
 the generation of the pending block. Under `canon/`, `z-<first block>` objects
 hold older parts of the canonical chain and `canon/recent/` holds snapshots of
-the non-finalized part. Each segment directory contains the `header`, `index`,
+the recent part. Each segment directory contains the `header`, `index`,
 and `join` fragments plus one file per body fragment. The `trace` fragment is
 empty unless the server runs with `--starknet.ingest-traces`.
 

@@ -8,7 +8,8 @@ updatedAt: 2026-11-05
 # Starknet data reference
 
 This page contains reference about the available data in Starknet DNA streams.
-All types are exported from `@apibara/starknet`.
+Import these types from `@apibara/starknet`. The definitions below omit
+`readonly` modifiers for readability.
 
 ### Related pages
 
@@ -147,17 +148,17 @@ export type Transaction = {
   filterIds: number[];
   meta: TransactionMeta;
   transaction:
-    | InvokeTransactionV0
-    | InvokeTransactionV1
-    | InvokeTransactionV3
-    | L1HandlerTransaction
-    | DeployTransaction
-    | DeclareTransactionV0
-    | DeclareTransactionV1
-    | DeclareTransactionV2
-    | DeclareTransactionV3
-    | DeployAccountTransactionV1
-    | DeployAccountTransactionV3;
+    | { _tag: "invokeV0"; invokeV0: InvokeTransactionV0 }
+    | { _tag: "invokeV1"; invokeV1: InvokeTransactionV1 }
+    | { _tag: "invokeV3"; invokeV3: InvokeTransactionV3 }
+    | { _tag: "l1Handler"; l1Handler: L1HandlerTransaction }
+    | { _tag: "deploy"; deploy: DeployTransaction }
+    | { _tag: "declareV0"; declareV0: DeclareTransactionV0 }
+    | { _tag: "declareV1"; declareV1: DeclareTransactionV1 }
+    | { _tag: "declareV2"; declareV2: DeclareTransactionV2 }
+    | { _tag: "declareV3"; declareV3: DeclareTransactionV3 }
+    | { _tag: "deployAccountV1"; deployAccountV1: DeployAccountTransactionV1 }
+    | { _tag: "deployAccountV3"; deployAccountV3: DeployAccountTransactionV3 };
 };
 ```
 
@@ -178,14 +179,11 @@ export type Transaction = {
 
 ```ts
 export type InvokeTransactionV0 = {
-  _tag: "invokeV0";
-  invokeV0: {
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    contractAddress: FieldElement;
-    entryPointSelector: FieldElement;
-    calldata: FieldElement[];
-  };
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  contractAddress: FieldElement;
+  entryPointSelector: FieldElement;
+  calldata: FieldElement[];
 };
 ```
 
@@ -199,14 +197,11 @@ export type InvokeTransactionV0 = {
 
 ```ts
 export type InvokeTransactionV1 = {
-  _tag: "invokeV1";
-  invokeV1: {
-    senderAddress: FieldElement;
-    calldata: FieldElement[];
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    nonce: FieldElement;
-  };
+  senderAddress: FieldElement;
+  calldata: FieldElement[];
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  nonce: FieldElement;
 };
 ```
 
@@ -230,19 +225,16 @@ export type ResourceBoundsMapping = {
 };
 
 export type InvokeTransactionV3 = {
-  _tag: "invokeV3";
-  invokeV3: {
-    senderAddress: FieldElement;
-    calldata: FieldElement[];
-    signature: FieldElement[];
-    nonce: FieldElement;
-    resourceBounds: ResourceBoundsMapping;
-    tip: bigint;
-    paymasterData: FieldElement[];
-    accountDeploymentData: FieldElement[];
-    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
-    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
-  };
+  senderAddress: FieldElement;
+  calldata: FieldElement[];
+  signature: FieldElement[];
+  nonce: FieldElement;
+  resourceBounds: ResourceBoundsMapping;
+  tip: bigint;
+  paymasterData: FieldElement[];
+  accountDeploymentData: FieldElement[];
+  nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+  feeDataAvailabilityMode: "l1" | "l2" | "unknown";
 };
 ```
 
@@ -261,13 +253,10 @@ export type InvokeTransactionV3 = {
 
 ```ts
 export type L1HandlerTransaction = {
-  _tag: "l1Handler";
-  l1Handler: {
-    contractAddress: FieldElement;
-    entryPointSelector: FieldElement;
-    calldata: FieldElement[];
-    nonce: bigint;
-  };
+  contractAddress: FieldElement;
+  entryPointSelector: FieldElement;
+  calldata: FieldElement[];
+  nonce: bigint;
 };
 ```
 
@@ -280,12 +269,9 @@ export type L1HandlerTransaction = {
 
 ```ts
 export type DeployTransaction = {
-  _tag: "deploy";
-  deploy: {
-    contractAddressSalt: FieldElement;
-    constructorCalldata: FieldElement[];
-    classHash: FieldElement;
-  };
+  contractAddressSalt: FieldElement;
+  constructorCalldata: FieldElement[];
+  classHash: FieldElement;
 };
 ```
 
@@ -297,13 +283,10 @@ export type DeployTransaction = {
 
 ```ts
 export type DeclareTransactionV0 = {
-  _tag: "declareV0";
-  declareV0: {
-    senderAddress: FieldElement;
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    classHash: FieldElement;
-  };
+  senderAddress: FieldElement;
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  classHash: FieldElement;
 };
 ```
 
@@ -316,14 +299,11 @@ export type DeclareTransactionV0 = {
 
 ```ts
 export type DeclareTransactionV1 = {
-  _tag: "declareV1";
-  declareV1: {
-    senderAddress: FieldElement;
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    classHash: FieldElement;
-    nonce: FieldElement;
-  };
+  senderAddress: FieldElement;
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  classHash: FieldElement;
+  nonce: FieldElement;
 };
 ```
 
@@ -337,15 +317,12 @@ export type DeclareTransactionV1 = {
 
 ```ts
 export type DeclareTransactionV2 = {
-  _tag: "declareV2";
-  declareV2: {
-    senderAddress: FieldElement;
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    classHash: FieldElement;
-    nonce: FieldElement;
-    compiledClassHash: FieldElement;
-  };
+  senderAddress: FieldElement;
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  classHash: FieldElement;
+  nonce: FieldElement;
+  compiledClassHash: FieldElement;
 };
 ```
 
@@ -360,20 +337,17 @@ export type DeclareTransactionV2 = {
 
 ```ts
 export type DeclareTransactionV3 = {
-  _tag: "declareV3";
-  declareV3: {
-    senderAddress: FieldElement;
-    signature: FieldElement[];
-    classHash: FieldElement;
-    nonce: FieldElement;
-    compiledClassHash: FieldElement;
-    resourceBounds: ResourceBoundsMapping;
-    tip: bigint;
-    paymasterData: FieldElement[];
-    accountDeploymentData: FieldElement[];
-    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
-    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
-  };
+  senderAddress: FieldElement;
+  signature: FieldElement[];
+  classHash: FieldElement;
+  nonce: FieldElement;
+  compiledClassHash: FieldElement;
+  resourceBounds: ResourceBoundsMapping;
+  tip: bigint;
+  paymasterData: FieldElement[];
+  accountDeploymentData: FieldElement[];
+  nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+  feeDataAvailabilityMode: "l1" | "l2" | "unknown";
 };
 ```
 
@@ -393,15 +367,12 @@ export type DeclareTransactionV3 = {
 
 ```ts
 export type DeployAccountTransactionV1 = {
-  _tag: "deployAccountV1";
-  deployAccountV1: {
-    maxFee: FieldElement;
-    signature: FieldElement[];
-    nonce: FieldElement;
-    contractAddressSalt: FieldElement;
-    constructorCalldata: FieldElement[];
-    classHash: FieldElement;
-  };
+  maxFee: FieldElement;
+  signature: FieldElement[];
+  nonce: FieldElement;
+  contractAddressSalt: FieldElement;
+  constructorCalldata: FieldElement[];
+  classHash: FieldElement;
 };
 ```
 
@@ -416,19 +387,16 @@ export type DeployAccountTransactionV1 = {
 
 ```ts
 export type DeployAccountTransactionV3 = {
-  _tag: "deployAccountV3";
-  deployAccountV3: {
-    signature: FieldElement[];
-    nonce: FieldElement;
-    contractAddressSalt: FieldElement;
-    constructorCalldata: FieldElement[];
-    classHash: FieldElement;
-    resourceBounds: ResourceBoundsMapping;
-    tip: bigint;
-    paymasterData: FieldElement[];
-    nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
-    feeDataAvailabilityMode: "l1" | "l2" | "unknown";
-  };
+  signature: FieldElement[];
+  nonce: FieldElement;
+  contractAddressSalt: FieldElement;
+  constructorCalldata: FieldElement[];
+  classHash: FieldElement;
+  resourceBounds: ResourceBoundsMapping;
+  tip: bigint;
+  paymasterData: FieldElement[];
+  nonceDataAvailabilityMode: "l1" | "l2" | "unknown";
+  feeDataAvailabilityMode: "l1" | "l2" | "unknown";
 };
 ```
 
@@ -454,11 +422,11 @@ export type TransactionReceipt = {
   filterIds: number[];
   meta: TransactionReceiptMeta;
   receipt:
-    | InvokeTransactionReceipt
-    | L1HandlerTransactionReceipt
-    | DeclareTransactionReceipt
-    | DeployTransactionReceipt
-    | DeployAccountTransactionReceipt;
+    | { _tag: "invoke"; invoke: InvokeTransactionReceipt }
+    | { _tag: "l1Handler"; l1Handler: L1HandlerTransactionReceipt }
+    | { _tag: "declare"; declare: DeclareTransactionReceipt }
+    | { _tag: "deploy"; deploy: DeployTransactionReceipt }
+    | { _tag: "deployAccount"; deployAccount: DeployAccountTransactionReceipt };
 };
 
 export type TransactionReceiptMeta = {
@@ -466,50 +434,31 @@ export type TransactionReceiptMeta = {
   transactionHash: FieldElement;
   actualFee: FeePayment;
   executionResources: ExecutionResources;
-  executionResult: ExecutionSucceeded | ExecutionReverted;
+  executionResult:
+    | { _tag: "succeeded"; succeeded: ExecutionSucceeded }
+    | { _tag: "reverted"; reverted: ExecutionReverted };
 };
 
-export type InvokeTransactionReceipt = {
-  _tag: "invoke";
-  invoke: {};
-};
+export type InvokeTransactionReceipt = {};
 
 export type L1HandlerTransactionReceipt = {
-  _tag: "l1Handler";
-  l1Handler: {
-    messageHash: Uint8Array;
-  };
+  messageHash: Uint8Array;
 };
 
-export type DeclareTransactionReceipt = {
-  _tag: "declare";
-  declare: {};
-};
+export type DeclareTransactionReceipt = {};
 
 export type DeployTransactionReceipt = {
-  _tag: "deploy";
-  deploy: {
-    contractAddress: FieldElement;
-  };
+  contractAddress: FieldElement;
 };
 
 export type DeployAccountTransactionReceipt = {
-  _tag: "deployAccount";
-  deployAccount: {
-    contractAddress: FieldElement;
-  };
+  contractAddress: FieldElement;
 };
 
-export type ExecutionSucceeded = {
-  _tag: "succeeded";
-  succeeded: {};
-};
+export type ExecutionSucceeded = {};
 
 export type ExecutionReverted = {
-  _tag: "reverted";
-  reverted: {
-    reason?: string;
-  };
+  reason?: string;
 };
 
 export type FeePayment = {
@@ -594,55 +543,33 @@ export type TransactionTrace = {
   transactionIndex: number;
   transactionHash: FieldElement;
   traceRoot:
-    | InvokeTransactionTrace
-    | DeclareTransactionTrace
-    | DeployAccountTransactionTrace
-    | L1HandlerTransactionTrace;
+    | { _tag: "invoke"; invoke: InvokeTransactionTrace }
+    | { _tag: "declare"; declare: DeclareTransactionTrace }
+    | { _tag: "deployAccount"; deployAccount: DeployAccountTransactionTrace }
+    | { _tag: "l1Handler"; l1Handler: L1HandlerTransactionTrace };
 };
 
 export type InvokeTransactionTrace = {
-  _tag: "invoke";
-  invoke: {
-    validateInvocation?: FunctionInvocation;
-    executeInvocation: ExecuteInvocationSuccess | ExecuteInvocationReverted;
-    feeTransferInvocation?: FunctionInvocation;
-  };
-};
-
-export type ExecuteInvocationSuccess = {
-  _tag: "success";
-  success: FunctionInvocation;
-};
-
-export type ExecuteInvocationReverted = {
-  _tag: "reverted";
-  reverted: {
-    reason?: string;
-  };
+  validateInvocation?: FunctionInvocation;
+  executeInvocation:
+    | { _tag: "success"; success: FunctionInvocation }
+    | { _tag: "reverted"; reverted: { reason?: string } };
+  feeTransferInvocation?: FunctionInvocation;
 };
 
 export type DeclareTransactionTrace = {
-  _tag: "declare";
-  declare: {
-    validateInvocation?: FunctionInvocation;
-    feeTransferInvocation?: FunctionInvocation;
-  };
+  validateInvocation?: FunctionInvocation;
+  feeTransferInvocation?: FunctionInvocation;
 };
 
 export type DeployAccountTransactionTrace = {
-  _tag: "deployAccount";
-  deployAccount: {
-    validateInvocation?: FunctionInvocation;
-    constructorInvocation?: FunctionInvocation;
-    feeTransferInvocation?: FunctionInvocation;
-  };
+  validateInvocation?: FunctionInvocation;
+  constructorInvocation?: FunctionInvocation;
+  feeTransferInvocation?: FunctionInvocation;
 };
 
 export type L1HandlerTransactionTrace = {
-  _tag: "l1Handler";
-  l1Handler: {
-    functionInvocation?: FunctionInvocation;
-  };
+  functionInvocation?: FunctionInvocation;
 };
 
 export type FunctionInvocation = {
@@ -711,31 +638,25 @@ A change in the declared or deployed contracts.
 ```ts
 export type ContractChange = {
   filterIds: number[];
-  change: DeclaredClass | ReplacedClass | DeployedContract;
+  change:
+    | { _tag: "declaredClass"; declaredClass: DeclaredClass }
+    | { _tag: "replacedClass"; replacedClass: ReplacedClass }
+    | { _tag: "deployedContract"; deployedContract: DeployedContract };
 };
 
 export type DeclaredClass = {
-  _tag: "declaredClass";
-  declaredClass: {
-    classHash?: FieldElement;
-    compiledClassHash?: FieldElement;
-  };
+  classHash?: FieldElement;
+  compiledClassHash?: FieldElement;
 };
 
 export type ReplacedClass = {
-  _tag: "replacedClass";
-  replacedClass: {
-    contractAddress?: FieldElement;
-    classHash?: FieldElement;
-  };
+  contractAddress?: FieldElement;
+  classHash?: FieldElement;
 };
 
 export type DeployedContract = {
-  _tag: "deployedContract";
-  deployedContract: {
-    contractAddress?: FieldElement;
-    classHash?: FieldElement;
-  };
+  contractAddress?: FieldElement;
+  classHash?: FieldElement;
 };
 ```
 
