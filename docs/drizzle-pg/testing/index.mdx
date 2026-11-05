@@ -116,7 +116,7 @@ describe("my indexer", () => {
     // Use the database like any other Drizzle database object
     const rows = await database.select().from(myTable);
 
-    expect(rows.map(({ id, ...rest }) => rest)).toMatchSnapshot();
+    expect(rows.map(({ id, ...rest }) => rest)).toMatchInlineSnapshot();
   });
 });
 ```
