@@ -1,7 +1,7 @@
 ---
 title: Top tips
 description: "Find most useful tips and patterns to help you get the most out of Starkstream."
-updatedAt: 2026-10-30
+updatedAt: 2026-11-05
 ---
 
 # Top tips
@@ -82,8 +82,8 @@ factory calls during reload and resets when a new process starts.
 
 Without a storage plugin, the new run starts again from `startingBlock`. Guard a
 block-based reload condition so replaying that block does not cause an endless
-reload loop. See [indexer persistence](/docs/getting-started/indexers) when you need
-to resume from stored progress.
+reload loop. See [indexer persistence](/docs/getting-started/installation#storing-data--persisting-state-across-restarts)
+when you need to resume from stored progress.
 
 ```ts [watchfile.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";

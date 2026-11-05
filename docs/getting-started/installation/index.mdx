@@ -2,7 +2,7 @@
 title: Installation
 description: "Learn how to install and get started with Starkstream."
 diataxis: tutorial
-updatedAt: 2026-11-04
+updatedAt: 2026-11-05
 ---
 
 # Installation
@@ -248,16 +248,15 @@ Once the indexers are built, you can run them in two ways:
   `--indexer` flag. In this tutorial we are going to use this method.
 - Running `.apibara/build/start.mjs` with Node. This is useful when building Docker images for your indexers.
 
-**Instrumentation limitation:** `apibara start` runs the same built bundle
-(`.apibara/build/start.mjs`), but when it is launched through `pnpm run start`,
-pnpm's bin shim exports `NODE_PATH` pointing at `node_modules/.pnpm/node_modules`,
-which lets the bundle's `require()` of the instrumentation file and its transitive
-OpenTelemetry dependencies resolve. Running `node .apibara/build/start.mjs`
-directly has no `NODE_PATH`, and the CLI's instrumentation loader swallows the
-resolution error, so telemetry is silently skipped. For instrumented indexers, use
-`pnpm run start` as shown below, or set `NODE_PATH` yourself or use a hoisted
-layout (`node-linker=hoisted`). Verify that telemetry is received before relying
-on a standalone deployment.
+**Instrumentation note:** `apibara start` runs the same built bundle
+(`.apibara/build/start.mjs`). In our testing, telemetry from `instrumentation.ts`
+was only picked up when the indexer was launched through `pnpm run start`, whose
+bin shim exports `NODE_PATH` pointing at `node_modules/.pnpm/node_modules`;
+running `node .apibara/build/start.mjs` directly skipped it. The instrumentation
+loader swallows load errors silently, so the only sign of failure is a missing
+`Registering from instrumentation` log line at startup. For instrumented
+indexers, use `pnpm run start` as shown below, or set `NODE_PATH` yourself, and
+confirm that the log line appears before relying on a standalone deployment.
 
 :::cli-command
 
@@ -362,6 +361,8 @@ addresses change.
 You can have any number of presets in the configuration and use the `--preset` flag to select which one to use.
 For example, you can add a `sepolia` preset that contains the URL of the Starknet Sepolia DNA stream.
 If a preset doesn't specify a key, then the value from the root configuration is used.
+Nested `runtimeConfig` keys are deep-merged, so a preset only needs to list the
+keys that differ from the root configuration.
 
 ```ts [apibara.config.ts]
 import { defineConfig } from "apibara/config";

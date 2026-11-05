@@ -2,7 +2,7 @@
 title: Drizzle's plugin API reference
 description: "Learn all available options and functions in the Drizzle's plugin."
 diataxis: reference
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # Drizzle's plugin API reference
@@ -30,10 +30,26 @@ const database = drizzle({
 
 A standard Drizzle schema, that is a map of tables.
 
+**type: "pglite" | "node-postgres"**
+
+The database driver to use. Defaults to `"pglite"`.
+
+PgLite is used only when `type` is `"pglite"` and the connection string starts with `memory://`, `file://`, or `idb://`.
+Any other connection string uses node-postgres, regardless of `type`.
+The `type` also selects the inferred TypeScript database type, so set `type: "node-postgres"` when connecting to PostgreSQL to get correct types.
+
 **connectionString: string**
 
-The connection string. By default, the helper uses the value of the `POSTGRES_CONNECTION_STRING` environment variable.
-If the connection string is `memory://`, the indexer will run with an in-memory PgLite database.
+The connection string. By default, the helper uses the value of the `POSTGRES_CONNECTION_STRING` environment variable, falling back to `memory://` when it is unset.
+If the connection string starts with `memory://`, `file://`, or `idb://`, the indexer will run with a PgLite database (in-memory for `memory://`).
+
+**poolConfig: pg.PoolConfig**
+
+Additional pool options passed to the node-postgres `Pool`. Not supported with PgLite.
+
+**config: DrizzleConfig**
+
+Additional Drizzle configuration options, except `schema`. With PgLite, it can also include a `connection` entry with PgLite-specific options.
 
 ## drizzleStorage
 

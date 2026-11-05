@@ -2,7 +2,7 @@
 title: Drizzle with PostgreSQL
 description: "Store your indexer's data to PostgreSQL using Drizzle ORM."
 diataxis: reference
-updatedAt: 2026-11-04
+updatedAt: 2026-11-05
 ---
 
 # Drizzle with PostgreSQL
@@ -178,8 +178,11 @@ You can also update and delete rows, subject to the following rollback limits.
 ### Current SDK rollback limitations
 
 In `@apibara/plugin-drizzle` 2.1.3, rollback can fail on single quotes in IDs or
-saved text and can round numeric values. Use immutable, non-empty IDs and store
-exact amounts as text.
+saved text. When a deleted or updated row is restored, integer values above
+2^53 in `bigint` or `numeric` columns can be rounded, because the previous row
+is stored as JSON, parsed into JavaScript numbers, and re-serialized on
+rollback; rolling back inserts is unaffected. Use immutable, non-empty IDs and
+store exact amounts as text.
 
 New indexers that can wait for finality can use `finality: "finalized"` to avoid
 rollback. This does not repair existing data or rollback history.
@@ -203,7 +206,7 @@ import {
 
 import { tokens } from "../lib/schema";
 
-const database = drizzle({ type: "node-postgres", schema: { tokens } });
+const database = drizzle({ type: "pglite", schema: { tokens } });
 
 export default defineIndexer(StarknetStream)({
   // ...

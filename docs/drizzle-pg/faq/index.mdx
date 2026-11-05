@@ -1,7 +1,7 @@
 ---
 title: Drizzle's plugin - Frequently Asked Questions
 description: "Find answers to common questions about using Drizzle with PostgreSQL."
-updatedAt: 2026-10-30
+updatedAt: 2026-11-05
 ---
 
 # Frequently Asked Questions
@@ -11,10 +11,14 @@ updatedAt: 2026-10-30
 ### ReferenceError: require is not defined in tests
 
 The ESM build of `@apibara/plugin-drizzle` 2.1.3 uses
-CommonJS `require` to load its database drivers and migrations. Direct ESM
-tests can therefore fail before opening a database. CLI bundles are unaffected.
+CommonJS `require` to load its database drivers and migrations. Any code that
+imports `@apibara/plugin-drizzle` directly as ESM and calls `drizzle()` or
+`migrate()`, for example Vitest tests, can therefore fail before opening a
+database. CLI bundles are unaffected.
 
-Until the package is fixed, provide `require` in the test setup:
+Until the package is fixed, provide `require` in the test setup. The shim must
+be installed before the indexer module is imported, which Vitest `setupFiles`
+guarantees:
 
 ```ts [test/setup.ts]
 import { createRequire } from "node:module";
