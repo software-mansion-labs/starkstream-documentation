@@ -71,8 +71,7 @@ The directory where to look for `*.indexer.ts` or `.indexer.js` files. Defaults 
 
 **`hooks`**
 
-Project lifecycle hooks, such as `rolldown:before`, `compiled`, and `close`.
-See the [CLI hook definitions](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/packages/cli/src/types/hooks.ts).
+Project lifecycle [hooks](https://github.com/software-mansion-labs/starkstream-typescript-sdk/blob/main/packages/cli/src/types/hooks.ts).
 
 **`debug: boolean`**
 
@@ -95,5 +94,5 @@ Shorthand for `rolldownConfig.resolve.exportConditions`.
 Configure Rolldown's file watcher, for example its `exclude` patterns. By
 default, the CLI excludes build output, dependencies, Git files, and
 `apibara.config`, which has its own watcher. Passing `exclude` replaces the
-[default list](https://github.com/software-mansion-labs/apibara-typescript-sdk/blob/main/packages/cli/src/core/build/dev.ts)
+[default list](https://github.com/software-mansion-labs/starkstream-typescript-sdk/blob/main/packages/cli/src/core/build/dev.ts)
 rather than extending it.

@@ -133,9 +133,7 @@ export default defineIndexer(StarknetStream)({
 
 ## Indexer lifecycle
 
-The following simplified Javascript pseudocode shows the order in which hooks
-are called. The real runner is async and passes each message-specific hook its
-payload.
+The following Javascript pseudocode shows the indexer's lifecycle. This should give you a good understanding of when hooks are called.
 
 ```js
 function run(indexer) {
