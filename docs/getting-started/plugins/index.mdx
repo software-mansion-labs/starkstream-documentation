@@ -2,7 +2,7 @@
 title: Plugins & Hooks
 description: "Learn how to use plugins to extend the functionality of your indexers."
 diataxis: explanation
-updatedAt: 2026-10-28
+updatedAt: 2026-10-29
 ---
 
 # Plugins & Hooks
@@ -34,9 +34,9 @@ You can register plugins in the indexer's configuration, under the `plugins` key
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
-import { defineIndexer } from "@apibara/indexer";
+import { defineIndexer } from "apibara/indexer";
 
-import { myAwesomePlugin } from "@/lib/my-plugin.ts";
+import { myAwesomePlugin } from "../lib/my-plugin";
 
 export default defineIndexer(StarknetStream)({
   streamUrl: "https://mainnet.starkstream.io",
@@ -56,11 +56,10 @@ The main way to define a plugin is by using the `defineIndexerPlugin` function. 
 When the runner runs the indexer, all the relevant hooks are called.
 
 ```ts [my-plugin.ts]
-import type { Cursor } from "@apibara/protocol";
-import { defineIndexerPlugin } from "@apibara/indexer/plugins";
+import { defineIndexerPlugin } from "apibara/plugins";
 
-export function myAwesomePlugin<TFilter, TBlock, TTxnParams>() {
-  return defineIndexerPlugin<TFilter, TBlock, TTxnParams>((indexer) => {
+export function myAwesomePlugin<TFilter, TBlock>() {
+  return defineIndexerPlugin<TFilter, TBlock>((indexer) => {
     indexer.hooks.hook("connect:before", ({ request, options }) => {
       // Do something before the indexer connects to the DNA stream.
     });
@@ -80,11 +79,10 @@ The middleware is registered using the `handler:middleware` hook. This hook take
 The argument to `use` is a function that takes the indexer's context and a `next` function to call the next middleware or the transform function.
 
 ```ts [my-plugin.ts]
-import type { Cursor } from "@apibara/protocol";
-import { defineIndexerPlugin } from "@apibara/indexer/plugins";
+import { defineIndexerPlugin } from "apibara/plugins";
 
-export function myAwesomePlugin<TFilter, TBlock, TTxnParams>() {
-  return defineIndexerPlugin<TFilter, TBlock, TTxnParams>((indexer) => {
+export function myAwesomePlugin<TFilter, TBlock>() {
+  return defineIndexerPlugin<TFilter, TBlock>((indexer) => {
     const db = openDatabase();
     indexer.hooks.hook("handler:middleware", ({ use }) => {
       use(async (context, next) => {
@@ -114,7 +112,7 @@ IMPORTANT: inline hooks are the recommended way to add hooks to an indexer. If t
 
 ```ts [my-indexer.indexer.ts]
 import { StarknetStream } from "@apibara/starknet";
-import { defineIndexer } from "@apibara/indexer";
+import { defineIndexer } from "apibara/indexer";
 
 export default defineIndexer(StarknetStream)({
   streamUrl: "https://mainnet.starkstream.io",

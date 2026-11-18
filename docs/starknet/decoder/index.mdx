@@ -2,7 +2,7 @@
 title: Starknet event decoder
 description: "Starknet: Event decoder reference guide."
 diataxis: reference
-updatedAt: 2026-10-07
+updatedAt: 2026-11-05
 ---
 
 # Starknet event decoder
@@ -14,7 +14,7 @@ The Starknet SDK provides a `decodeEvent` function to help you decode Starknet e
 Make sure you have the most recent Starkstream Starknet package installed:
 
 ```bash
-pnpm add @apibara/starknet@next
+pnpm add @apibara/starknet@latest
 ```
 
 ## Setup
@@ -37,14 +37,21 @@ export const myAbi = [
       },
       {
         kind: "nested",
-        name: "OwnedEvent",
-        type: "myapp::components::owned::Owned::Event",
+        name: "OwnerChanged",
+        type: "myapp::components::owned::Owned::OwnerChanged",
       },
     ],
   },
   /* ... a lot more events and types here ... */
 ] as const satisfies Abi;
 ```
+
+{/* TODO(software-mansion/starkstream-infra#191):
+Remove after nested enum event decoding is supported in a released SDK. */}
+
+The `OwnerChanged` variant above refers to a struct event. A `nested` variant
+whose payload is another enum is not decoded in `@apibara/starknet` 2.1.4:
+`strict: false` returns `null`, and `strict: true` throws.
 
 ## Usage
 
@@ -53,13 +60,14 @@ Notice that if you setup your editor correctly, the value of `eventName` will be
 
 ```typescript
 import { defineIndexer } from "apibara/indexer";
-import { useLogger } from "apibara/plugins";
 
 import { StarknetStream, decodeEvent } from "@apibara/starknet";
 
 import { myAbi } from "./abi";
 
 export default defineIndexer(StarknetStream)({
+    streamUrl: "https://mainnet.starkstream.io",
+    filter: { events: [{}] },
     async transform({ block }) {
       const { events } = block;
       for (const event of events) {
@@ -106,8 +114,8 @@ pub struct BookRemoved {
 The Starkstream SDK automatically infers the following event type (without code generation).
 
 ```typescript
-type BookAdded = { id: number, title: FieldElement, author: FieldElement };
-type BookRemoved = { id: number };
+type BookAdded = { id: number | bigint, title: bigint, author: bigint };
+type BookRemoved = { id: number | bigint };
 type Event =
   { _tag: "BookAdded", BookAdded: BookAdded }
   | { _tag: "BookRemoved", BookRemoved: BookRemoved };
@@ -127,7 +135,7 @@ switch (args._tag) {
     console.log(`Book removed: ${args.BookRemoved.id}`);
     break;
 }
-````
+```
 
 ## Reference
 
@@ -139,6 +147,13 @@ switch (args._tag) {
  - `event`: the event to decode.
  - `eventName`: the name of the event to decode, as defined in the ABI.
  - `strict`: if `true`, the decoder will throw an error if the event is not found in the ABI. If `false`, the decoder will return `null` if the event is not found.
+
+{/* TODO(software-mansion/starkstream-infra#190):
+Remove after the empty-key decoder fix is released. */}
+
+**SDK limitation:** in `@apibara/starknet` 2.1.4, decoding a struct event whose
+`event.keys` array is empty throws a `TypeError` even with `strict: false`, so
+skip empty-key events before decoding.
 
 **Returns**
 

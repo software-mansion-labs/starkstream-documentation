@@ -1,12 +1,42 @@
 ---
 title: Drizzle's plugin - Frequently Asked Questions
 description: "Find answers to common questions about using Drizzle with PostgreSQL."
-updatedAt: 2025-03-18
+updatedAt: 2026-11-05
 ---
 
 # Frequently Asked Questions
 
 ## General
+
+{/* TODO(software-mansion/starkstream-infra#193):
+Remove this workaround section after the Drizzle ESM fix is released. */}
+
+### ReferenceError: require is not defined in tests
+
+The ESM build of `@apibara/plugin-drizzle` calls `require()` internally, so
+calling its `drizzle()` or `migrate()` helpers directly from ESM, for example
+in Vitest tests, fails with this error. Indexers built by the CLI are unaffected.
+
+Until the package is fixed, provide `require` before the indexer module is
+imported, using a Vitest setup file:
+
+```ts [test/setup.ts]
+import { createRequire } from "node:module";
+
+Object.assign(globalThis, { require: createRequire(import.meta.url) });
+```
+
+Register the setup file in your Vitest configuration:
+
+```ts [vitest.config.ts]
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    setupFiles: ["./test/setup.ts"],
+  },
+});
+```
 
 ### Argument of type `PgTableWithColumns` is not assignable to parameter of type `PgTable`.
 
@@ -104,5 +134,7 @@ for (const event of block.events) {
 
 // After
 const transfers = block.events.map((event) => decodeEvent(event));
-await db.insert(schema.transfers).values(transfers);
+if (transfers.length > 0) {
+  await db.insert(schema.transfers).values(transfers);
+}
 ```
