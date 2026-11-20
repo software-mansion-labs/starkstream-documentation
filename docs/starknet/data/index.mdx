@@ -68,8 +68,8 @@ export type BlockHeader = {
   starknetVersion: string;
   l1GasPrice: ResourcePrice;
   l1DataGasPrice: ResourcePrice;
-  l2GasPrice?: ResourcePrice;
   l1DataAvailabilityMode: "blob" | "calldata" | "unknown";
+  l2GasPrice?: ResourcePrice;
 };
 
 export type ResourcePrice = {
@@ -89,8 +89,8 @@ export type ResourcePrice = {
 - `starknetVersion`: the Starknet version.
 - `l1GasPrice`: the L1 gas price.
 - `l1DataGasPrice`: the L1 data gas price.
-- `l2GasPrice`: the L2 gas price, when available.
 - `l1DataAvailabilityMode`: the L1 data availability mode.
+- `l2GasPrice`: the L2 gas price, when available.
 
 - `priceInFri`: the price of L1 gas in the block, in units of fri (10^-18 $STRK).
 - `priceInWei`: the price of L1 gas in the block, in units of wei (10^-18 $ETH).
