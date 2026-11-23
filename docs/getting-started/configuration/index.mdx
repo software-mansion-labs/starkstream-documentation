@@ -2,7 +2,7 @@
 title: Configuration - apibara.config.ts
 description: "Learn how to configure your indexers using the apibara.config.ts file."
 diataxis: reference
-updatedAt: 2026-10-29
+updatedAt: 2026-11-05
 ---
 
 # apibara.config.ts
@@ -71,7 +71,7 @@ The directory where to look for `*.indexer.ts` or `.indexer.js` files. Defaults 
 
 **`hooks`**
 
-Project level [hooks](/docs/getting-started/plugins).
+Project lifecycle [hooks](https://github.com/software-mansion-labs/starkstream-typescript-sdk/blob/main/packages/cli/src/types/hooks.ts).
 
 **`debug: boolean`**
 
@@ -89,6 +89,10 @@ Shorthand for `rolldownConfig.resolve.exportConditions`.
 
 ## File watcher
 
-**`watchOptions: WatchOptions`**
+**`watchOptions: WatchOptions["watch"]`**
 
-Configure Rolldown's file watcher. Defaults to `{ignore: ["**/node_modules/**", "**/.apibara/**"]}`.
+Configure Rolldown's file watcher, for example its `exclude` patterns. By
+default, the CLI excludes build output, dependencies, Git files, and
+`apibara.config`, which has its own watcher. Passing `exclude` replaces the
+[default list](https://github.com/software-mansion-labs/starkstream-typescript-sdk/blob/main/packages/cli/src/core/build/dev.ts)
+rather than extending it.
